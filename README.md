@@ -4,7 +4,7 @@ Your files, protected before they leave your browser.
 
 Yuni Share provides personal file storage with client-side encryption. Your browser encrypts file contents before upload and decrypts them when you download. File names, paths, and per-file keys are protected within encrypted metadata.
 
-This repository contains the application source used by Yuni Share, excluding environment files, deployment secrets, user data, and non-source distribution artifacts. The included application files match the running application snapshot checked on **September 14, 2026**. See [Source Verification](VERIFICATION.md) for the scope and file hashes.
+This repository contains the source code for the Yuni Share website, excluding environment files, deployment secrets, user data, and non-source distribution artifacts. The included website source files match the running website snapshot checked on **September 14, 2026**. See [Source Verification](VERIFICATION.md) for the scope and file hashes.
 
 ## What you can explore
 
@@ -20,7 +20,7 @@ Your browser generates a vault key. Your separate encryption password is process
 
 Each upload receives a random 256-bit file key and a file nonce. Chunk encryption binds content to the upload identifier and chunk index using authenticated data. The client verifies and decrypts downloaded chunks before reconstructing the file.
 
-Our "No compression, no speed limits, no transcoding" message refers to preserving original file quality without lossy compression or media re-encoding. Internally, format version 2 may use reversible, lossless gzip compression before encryption when supported and beneficial. Downloads automatically decompress those chunks and reconstruct the original file; no manual extraction is needed. The speed statement is not a guaranteed transfer rate or a removal of storage quotas. Read [Does uploading change file quality?](SECURITY.md#does-uploading-change-file-quality) for the full explanation.
+Our "No compression, no speed limits, no transcoding" message refers to preserving original file quality without lossy compression or media re-encoding. Gzip is handled automatically, not through a user setting: with browser support, format version 2 tries lossless gzip on each non-empty chunk before encryption and uses the compressed payload only if it is smaller. Otherwise, it encrypts the uncompressed payload. Downloads automatically decompress the compressed chunks and reconstruct the original file; no manual extraction is needed. The speed statement is not a guaranteed transfer rate or a removal of storage quotas. Read [Does uploading change file quality?](SECURITY.md#does-uploading-change-file-quality) for the full explanation and [check your downloaded file using SHA-256](SECURITY.md#how-can-i-check-that-my-downloaded-file-is-identical).
 
 File content and sensitive metadata are encrypted, but account and storage information such as email addresses, timestamps, sizes, and category hints remains visible to the server. Avatars are outside file encryption. Read [Your Files and Privacy](SECURITY.md) for details.
 

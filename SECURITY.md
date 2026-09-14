@@ -42,13 +42,53 @@ Availability depends on your browser, operating system, password manager, and au
 
 The promise "No compression, no speed limits, no transcoding" describes the intended user experience. Here, "no compression" means **no lossy compression or quality reduction**, not that the transfer format never uses compression. Your photos, videos, and other files are not re-encoded into a different media format as part of this upload process.
 
-Internally, the browser can apply **lossless gzip compression** to individual chunks before encryption. It uses the compressed payload only when gzip is supported and the result is smaller; otherwise, it keeps the original chunk payload. This reversible storage and transfer step does not discard file content or reduce image resolution, video frame rate, or media quality.
+**Gzip is automatic, not a setting you need to enable or choose.** Before encryption, the browser tries lossless gzip on each non-empty chunk when its compression and decompression APIs are available. It compares the compressed size with the original size and uses the compressed payload only if it is smaller. If it is not smaller, or the browser does not support these APIs, the original payload is encrypted instead. Both paths remain encrypted. This reversible storage and transfer step does not discard file content or reduce image resolution, video frame rate, or media quality.
 
 When you download a file, the client decrypts the chunks, automatically decompresses any gzip-compressed payloads, and reassembles the original file. You do not receive a gzip archive and do not need to unzip anything yourself. For an unchanged file, successful reconstruction restores the original bytes. You can check this by comparing SHA-256 hashes of the original and downloaded files; matching hashes confirm byte-for-byte equality.
 
 "No speed limits" refers to the service's advertised absence of an artificial transfer-speed cap, not a promise of a particular speed or unlimited resources. Actual throughput still depends on your connection, device, encryption and compression work, server capacity, and storage service. It should not be read as removing storage quotas or other service limits.
 
-In short: **original file content and quality are preserved, without lossy compression or transcoding. Optional lossless gzip is automatically reversed on download.**
+In short: **original file content and quality are preserved, without lossy compression or transcoding. The browser automatically decides whether gzip reduces each chunk's size and automatically decompresses gzip-compressed chunks on download.**
+
+## How can I check that my downloaded file is identical?
+
+Compare the SHA-256 hash of your original file with the hash of the completed download. A hash is a fingerprint calculated from the file's contents. Perform this check locally; you do not need to upload either file to a hash-checking website.
+
+1. Keep the original file unchanged after uploading it.
+2. Download that same file from Yuni Share and wait for the download to finish. Save it separately so you do not overwrite the original.
+3. Use the commands below for your operating system, replacing the example paths with the actual paths to your files. Compare the complete 64-character SHA-256 values, not the file names.
+
+### Windows (PowerShell)
+
+Open PowerShell and run:
+
+```powershell
+$originalHash = (Get-FileHash -LiteralPath 'C:\Files\Original\photo.jpg' -Algorithm SHA256 -ErrorAction Stop).Hash
+$downloadedHash = (Get-FileHash -LiteralPath 'C:\Files\Downloaded\photo.jpg' -Algorithm SHA256 -ErrorAction Stop).Hash
+$originalHash
+$downloadedHash
+$originalHash -eq $downloadedHash
+```
+
+The last command prints `True` when the hashes match and `False` when they differ. If either hashing command reports an error, correct the path or access problem and rerun all commands before interpreting the result.
+
+### macOS (Terminal)
+
+```sh
+shasum -a 256 "/Users/your-name/Original/photo.jpg" "/Users/your-name/Downloads/photo.jpg"
+```
+
+### Linux (Terminal)
+
+```sh
+sha256sum "/home/your-name/Original/photo.jpg" "/home/your-name/Downloads/photo.jpg"
+```
+
+On macOS and Linux, each output line starts with the file's hash, followed by its path. The two full hash values should match.
+
+Matching SHA-256 values provide extremely strong evidence that the file contents are byte-for-byte identical, including any metadata stored inside the file. Renaming a file or changing its filesystem timestamps does not change its content hash. A mismatch means the contents differ: check that you selected the same file version, have not edited either copy, and completed the download, then download again if necessary. Do not delete your original while investigating a mismatch.
+
+Compare the restored file, **not the encrypted `.bin` chunks stored on the server**. Their hashes are expected to differ from the original. The repository's `SOURCE-SHA256.txt` lists source-code hashes and is unrelated to your personal files. This comparison verifies file equality, not the security of the entire service.
 
 ## What should I do to stay safe?
 
