@@ -7,17 +7,17 @@
   <meta name="theme-color" content="#ffffff">
   <title>Yuni Share｜端到端加密文件存储、管理与安全分享</title>
   <meta name="description" content="Yuni Share 提供在线文件上传、管理与分享服务，帮助你整理个人文件、查看存储空间和管理分享内容。通过浏览器访问文件工作区，在不同设备间管理和分享所需资料，并查看账户与订阅信息。">
-  <link rel="icon" type="image/png" sizes="256x256" href="/brand.svg">
-  <link rel="apple-touch-icon" href="/brand.svg">
+  <link rel="icon" type="image/png" sizes="256x256" href="/li-bai-avatar.png">
+  <link rel="apple-touch-icon" href="/li-bai-avatar.png">
   <link rel="stylesheet" href="/styles.css?v=96-home-seo-r1" integrity="sha384-87pwE8QkpYl3TAsYAtt2hDndQk3q0CDIaIO9G6FGUFKhUhbrRcvIWuj6AMQLF/ad" crossorigin="anonymous">
   <link rel="stylesheet" href="/auth-green.css?v=20260910-4">
   <script type="module" src="/register-steps.js?v=2"></script>
-<link rel="stylesheet" href="/standalone.css"></head>
+</head>
 <body>
   <header class="topbar">
-    <a class="brand" href="/" aria-label="Yuni Share 首页"><img class="brand-mark" src="/brand.svg" alt="Yuni Share 标志"><h1 style="font:inherit;margin:0"><span>Yuni Share</span></h1></a>
+    <a class="brand" href="/" aria-label="Yuni Share 首页"><img class="brand-mark" src="/li-bai-avatar.png" alt="Yuni Share 标志"><h1 style="font:inherit;margin:0"><span>Yuni Share</span></h1></a>
     <div class="account" id="account" hidden>
-      <button class="icon-button" id="avatarButton" type="button" title="更换头像"><img id="accountAvatar" src="/brand.svg" alt="头像" style="width:28px;height:28px;border-radius:50%;object-fit:cover"><span class="mobile-action-label">头像</span></button>
+      <button class="icon-button" id="avatarButton" type="button" title="更换头像"><img id="accountAvatar" src="/li-bai-avatar.png" alt="头像" style="width:28px;height:28px;border-radius:50%;object-fit:cover"><span class="mobile-action-label">头像</span></button>
       <input id="avatarInput" type="file" accept="image/png,image/jpeg,image/webp" hidden>
       <span class="account-name" id="username"></span>
       <button class="account-control" id="subscription" type="button" title="增加端到端加密空间">增加空间</button>
@@ -43,13 +43,13 @@
       <div class="auth-copy">
         <p class="eyebrow">端到端加密文件空间</p>
         <h2>你的文件，只属于你。</h2>
-        <p>文件会在浏览器中加密后上传，不转码；可无损压缩分片。服务器保存密文，只有解锁后的账户才能还原原文件。</p>
+        <p>文件会在浏览器中加密后上传，不压缩、不转码。服务器保存密文，只有解锁后的账户才能还原原文件。</p>
         <div class="feature-row">
-          <span>本地加密</span><span>分片上传</span><span>私有下载</span><span>原内容还原</span>
+          <span>本地加密</span><span>分片上传</span><span>私有下载</span><span>原画质传输</span>
         </div>
       </div>
       <div class="auth-panel">
-        <div class="auth-card-brand"><img src="/brand.svg" alt="Yuni Share 标志"><span>Yuni Share</span></div>
+        <div class="auth-card-brand"><img src="/li-bai-avatar.png" alt="Yuni Share 标志"><span>Yuni Share</span></div>
         <div class="tabs" role="tablist">
           <button class="tab active" id="loginTab" role="tab">登录</button>
           <button class="tab" id="registerTab" role="tab">注册</button>
@@ -60,7 +60,7 @@
           <label>密码<span class="password-input"><input id="authPassword" name="password" type="password" autocomplete="current-password" minlength="10" maxlength="128" required placeholder="至少 10 个字符"><button class="password-visibility-toggle" type="button" data-password-toggle="authPassword" aria-label="显示密码" aria-pressed="false" title="显示密码"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6Z"></path><circle cx="12" cy="12" r="2.75"></circle></svg><svg class="password-visibility-hidden-icon" aria-hidden="true" viewBox="0 0 24 24"><path d="m3 3 18 18"></path><path d="M10.6 6.2A10.2 10.2 0 0 1 12 6c6 0 9.5 6 9.5 6a18 18 0 0 1-3.2 3.7M6.2 6.2C3.9 8 2.5 12 2.5 12s3.5 6 9.5 6c1.3 0 2.5-.3 3.5-.8"></path><path d="M9.8 9.8a3.1 3.1 0 0 0 4.4 4.4"></path></svg></button></span></label>
           <label id="vaultPasswordField" hidden>加密密码<span class="password-input"><input id="authVaultPassword" name="vaultPassword" type="password" autocomplete="new-password" minlength="12" maxlength="128" placeholder="独立于登录密码，仅在本机解锁文件"><button class="password-visibility-toggle" type="button" data-password-toggle="authVaultPassword" aria-label="显示加密密码" aria-pressed="false" title="显示加密密码"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6Z"></path><circle cx="12" cy="12" r="2.75"></circle></svg><svg class="password-visibility-hidden-icon" aria-hidden="true" viewBox="0 0 24 24"><path d="m3 3 18 18"></path><path d="M10.6 6.2A10.2 10.2 0 0 1 12 6c6 0 9.5 6 9.5 6a18 18 0 0 1-3.2 3.7M6.2 6.2C3.9 8 2.5 12 2.5 12s3.5 6 9.5 6c1.3 0 2.5-.3 3.5-.8"></path><path d="M9.8 9.8a3.1 3.1 0 0 0 4.4 4.4"></path></svg></button></span></label>
           <label id="inviteField" hidden>注册码<input name="inviteCode" type="password" autocomplete="off" placeholder="向管理员获取"></label>
-          <label id="codeField" hidden>管理员注册码<span class="code-row"><input name="code" autocomplete="one-time-code" inputmode="text" minlength="6" maxlength="6" placeholder="管理员提供的 6 位码"><button class="secondary" type="button" id="sendCode">获取方式</button></span></label>
+          <label id="codeField" hidden>邮箱验证码<span class="code-row"><input name="code" autocomplete="one-time-code" inputmode="text" minlength="6" maxlength="6" placeholder="6 位验证码"><button class="secondary" type="button" id="sendCode">发送验证码</button></span></label>
           <button class="primary wide passkey-login" id="passkeyLogin" type="button">使用 Passkey 登录</button>
           <div class="auth-method-divider" id="passwordLoginDivider"><span>或使用密码登录</span></div>
           <button class="secondary wide password-login" type="submit" id="authSubmit">登录</button>
@@ -74,7 +74,7 @@
       <div class="drive-head">
         <div><p class="eyebrow">私有空间</p><h2>我的文件</h2></div>
         <button class="mobile-profile-button" id="mobileAvatarButton" type="button" title="更换头像" aria-label="更换头像">
-          <img id="mobileAccountAvatar" src="/brand.svg" alt="当前头像">
+          <img id="mobileAccountAvatar" src="/li-bai-avatar.png" alt="当前头像">
           <span>更换头像</span>
         </button>
         <div class="upload-picker-group">
@@ -126,12 +126,12 @@
     </section>
   </main>
   <footer class="site-footer">
-    <a href="/terms">服务条款</a><a href="/user-agreement">用户协议</a><a href="/privacy">隐私政策</a><a href="/disclaimer">免责声明</a><a href="/sitemap/" data-home-sitemap>网站地图</a>
+    <a href="/downloads/Yuni-Share-1.0.3.apk" download hidden data-feature="android-apk-download">Android APK</a><a href="/terms">服务条款</a><a href="/user-agreement">用户协议</a><a href="/privacy">隐私政策</a><a href="/disclaimer">免责声明</a><a href="/sitemap/" data-home-sitemap>网站地图</a>
   </footer>
   <div class="modal-backdrop" id="subscriptionModal" hidden>
     <section class="modal subscription-modal" role="dialog" aria-modal="true" aria-labelledby="subscriptionTitle">
       <button class="icon-button modal-close" id="closeSubscriptionModal" type="button" aria-label="关闭">×</button>
-      <header class="subscription-intro"><p class="eyebrow">增加加密空间</p><h2 id="subscriptionTitle">扩展你的端到端加密空间</h2><p>基础会员决定账户总空间，叠加包可按实际需要重复购买；文件保持原始画质，不转码；可无损压缩分片。</p></header>
+      <header class="subscription-intro"><p class="eyebrow">增加加密空间</p><h2 id="subscriptionTitle">扩展你的端到端加密空间</h2><p>基础会员决定账户总空间，叠加包可按实际需要重复购买；文件保持原始画质，不压缩、不转码。</p></header>
       <p id="subscriptionStatus" class="subscription-status">正在读取套餐…</p>
       <section class="subscription-section">
         <div class="subscription-section-heading"><div><span>基础会员</span><h3>一个账户仅保留一个有效订阅</h3></div><label id="subscriptionCycleField" class="subscription-cycle">订阅周期<select id="subscriptionCycle"><option value="monthly">按月订阅</option><option value="yearly">按年订阅（省两个月）</option></select></label></div>

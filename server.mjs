@@ -15,7 +15,7 @@ import {
   verifyAuthenticationResponse,
   verifyRegistrationResponse
 } from '@simplewebauthn/server';
-import { enrollmentRequest } from './enrollment.mjs';
+import { createMembershipExpiryReminderService } from './membership-expiry.mjs';
 
 const PORT = Number(process.env.PORT || 8191);
 const DATA_ROOT = path.resolve(process.env.DATA_ROOT || './data');
@@ -28,15 +28,16 @@ const INVITE_CODE = process.env.INVITE_CODE || '';
 // Keep the invite configuration available for a future limited rollout, but
 // leave public registration open for the current service.
 const INVITE_REGISTRATION_ENABLED = false;
-
-
-
-
+const MAIL_API_URL = process.env.MAIL_API_URL || '';
+const MAIL_API_TOKEN = process.env.MAIL_API_TOKEN || '';
+const MAIL_SCOPE = process.env.MAIL_SCOPE || 'yuni-share-registration-v1';
+const TRANSACTIONAL_MAIL_API_URL = process.env.MAIL_TRANSACTIONAL_API_URL
+  || MAIL_API_URL.replace(/\/v1\/recovery-email(?:\?.*)?$/, '/v1/transactional-email');
 const USER_QUOTA = Number(process.env.USER_QUOTA_BYTES || 5 * 1024 ** 3);
-const PAYMENT_API_ROOT = '';
-const PAYMENT_MERCHANT_NUM = '';
-const PAYMENT_SECRET = '';
-const PAYMENT_PAY_TYPE = '';
+const PAYMENT_API_ROOT = String(process.env.PAYMENT_API_ROOT || '').replace(/\/$/, '');
+const PAYMENT_MERCHANT_NUM = String(process.env.PAYMENT_MERCHANT_NUM || '');
+const PAYMENT_SECRET = String(process.env.PAYMENT_SECRET || '');
+const PAYMENT_PAY_TYPE = String(process.env.PAYMENT_PAY_TYPE || 'alipay');
 const PAYMENT_ENABLED = Boolean(PAYMENT_API_ROOT && PAYMENT_MERCHANT_NUM && PAYMENT_SECRET);
 // Administrator access is intentionally separate from customer accounts.  Do
 // not reuse a share_session or a customer password for the management console.
@@ -84,15 +85,15 @@ const PASSKEY_CHALLENGE_TTL = 5 * 60 * 1000;
 const VAULT_RECOVERY_RESET_PROOF_TTL = 5 * 60 * 1000;
 const PUBLIC_ORIGIN = new URL(PUBLIC_URL).origin;
 const WEBAUTHN_RP_ID = process.env.WEBAUTHN_RP_ID || new URL(PUBLIC_URL).hostname;
-
-
-const USER_PASSKEY_ORIGINS = [PUBLIC_ORIGIN];
+const ANDROID_APP_CERT_SHA256 = '41:A7:95:D7:7B:68:58:7B:B4:D4:A0:42:85:B9:1F:CD:06:1D:66:DC:2E:00:3E:C7:F0:16:36:03:6F:26:A2:F6';
+const ANDROID_APP_ORIGIN = 'android:apk-key-hash:QaeV13toWHu01KBChbkfzQYdZtwuAD7H8BY2A28movY';
+const USER_PASSKEY_ORIGINS = [PUBLIC_ORIGIN, ANDROID_APP_ORIGIN, 'android:apk-key-hash:44U4pX6JAJI21-K8Hv5IGXEvlqU6sA3cBgiyX4RTFBo'];
 const VAULT_PASSKEY_PRF_INPUT = crypto.createHash('sha256')
   .update('yuni-share:vault-passkey-prf:v1')
   .digest('base64url');
-const STORAGE_API_URL = '';
-const STORAGE_API_TOKEN = '';
-const STORAGE_POOL_ID = '';
+const STORAGE_API_URL = String(process.env.STORAGE_API_URL || '').replace(/\/$/, '');
+const STORAGE_API_TOKEN = String(process.env.STORAGE_API_TOKEN || '');
+const STORAGE_POOL_ID = String(process.env.STORAGE_POOL_ID || '');
 const STORAGE_ENABLED = Boolean(STORAGE_API_URL && STORAGE_API_TOKEN);
 const SITE_CONTENT_DEFINITIONS = new Map([
   ['terms', { label: '服务条款', fileName: 'terms.html', route: '/terms' }],
@@ -1121,11 +1122,65 @@ function uploadCancelledError() {
   return error;
 }
 
-async function verifyEnrollmentRequest(action, email, code) { return enrollmentRequest(DATA_ROOT, action, email, code); }
+async function mailRequest(action, email, code, ip) {
+  if (!MAIL_API_URL || !MAIL_API_TOKEN) return { ok: false, status: 503, error: '邮箱验证码服务尚未配置' };
+  try {
+    const response = await fetch(MAIL_API_URL, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${MAIL_API_TOKEN}`,
+        'Content-Type': 'application/json',
+        'X-Forwarded-For': ip
+      },
+      body: JSON.stringify({ to: email, scope: MAIL_SCOPE, action, code }),
+      signal: AbortSignal.timeout(12_000)
+    });
+    const data = await response.json().catch(() => ({}));
+    return { ok: response.ok, status: response.status, ...data };
+  } catch {
+    return { ok: false, status: 503, error: '邮箱验证码服务暂时不可用' };
+  }
+}
 
-async function notificationUnavailable() { return { ok: false, status: 501, error: 'This standalone edition does not deliver notifications.' }; }
+async function transactionalMailRequest({
+  to,
+  subject,
+  text,
+  actionUrl = '',
+  actionLabel = '',
+  template = '',
+  templateData = null,
+  idempotencyKey = ''
+}) {
+  if (!TRANSACTIONAL_MAIL_API_URL || !MAIL_API_TOKEN) {
+    return { ok: false, status: 503, error: '账户通知邮件服务尚未配置' };
+  }
+  try {
+    const response = await fetch(TRANSACTIONAL_MAIL_API_URL, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${MAIL_API_TOKEN}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        to, subject, text, actionUrl, actionLabel, template, templateData, idempotencyKey
+      }),
+      signal: AbortSignal.timeout(12_000)
+    });
+    const data = await response.json().catch(() => ({}));
+    return { ok: response.ok, status: response.status, ...data };
+  } catch {
+    return { ok: false, status: 503, error: '账户通知邮件服务暂时不可用' };
+  }
+}
 
-
+const membershipExpiryReminderService = createMembershipExpiryReminderService({
+  db,
+  sendMail: transactionalMailRequest,
+  getUsage: userId => Number(q.usage.get(userId).bytes),
+  publicUrl: PUBLIC_URL,
+  freeQuotaBytes: USER_QUOTA
+});
 
 function formatUtcTime(timestamp) {
   return new Intl.DateTimeFormat('en-US', {
@@ -1140,11 +1195,32 @@ function formatUtcTime(timestamp) {
   }).format(new Date(timestamp));
 }
 
-function deletionScheduledMessage() { return {}; }
+function deletionScheduledMessage(deletion, cancellationToken) {
+  const scheduledAt = formatUtcTime(deletion.scheduled_for);
+  return {
+    subject: 'Yuni Share · Account Deletion Scheduled',
+    text: `This email confirms your request to delete your Yuni Share account.\n\nYour account has been signed out and locked. You selected a ${deletion.retention_days}-day recovery period. On ${scheduledAt}, Yuni Share will permanently erase your account record and the encrypted files stored for this account. This action cannot be undone once the scheduled date has passed.\n\nThe secure recovery link below is valid until ${scheduledAt}, which is the end of the recovery period you selected. It is a single-use link: if you use it to restore the account, the scheduled deletion is cancelled immediately and this link stops working. You do not need to know your previous login password to use the link. Keep this email private and do not forward the link; anyone who can access this email and link before it expires could restore the account.\n\nThe recovery period is the period you selected, not a claim that your erasure request has already been completed. Yuni Share does not keep a separate copy of your encrypted files for this deletion flow. Any limited retention that may be required by applicable law must be assessed separately and documented for that specific obligation.`,
+    actionUrl: `${PUBLIC_URL}/recovery-account#cancel-deletion=${cancellationToken}`,
+    actionLabel: 'Cancel Scheduled Deletion'
+  };
+}
 
-function deletionCompletedMessage() { return {}; }
+function deletionCompletedMessage(deletion) {
+  const completedAt = formatUtcTime(deletion.completed_at);
+  return {
+    subject: 'Yuni Share · Account Deletion Completed',
+    text: `Your Yuni Share account deletion has been completed on ${completedAt}.\n\nThe account record, active sessions, upload sessions, and encrypted files associated with this account have been permanently erased. The deletion cannot be reversed.\n\nThis notification is sent only after the deletion process has completed. We will not keep the cancellation link or account credentials after this notification is delivered.`
+  };
+}
 
-function passwordResetMessage() { return {}; }
+function passwordResetMessage(resetToken) {
+  return {
+    subject: 'Yuni Share · Reset Your Login Password',
+    text: 'We received a request to reset your Yuni Share login password. Use the secure button below within 15 minutes to choose a new login password. This link can be used only once.\n\nResetting your login password does not change your separate encryption password and does not give Yuni Share access to encrypted files. If you did not request this change, you can safely ignore this email.',
+    actionUrl: `${PUBLIC_URL}/#reset-login-password=${resetToken}`,
+    actionLabel: 'Reset Login Password'
+  };
+}
 
 function requestIp(req) {
   return String(req.get('cf-connecting-ip') || req.ip || 'unknown').slice(0, 80);
@@ -1156,7 +1232,15 @@ async function removeUpload(upload) {
   if (STORAGE_ENABLED && upload.storage_object_id) await storageRequest(`/internal/share/objects/${encodeURIComponent(upload.storage_object_id)}`, { method: 'DELETE' }).catch(() => {});
 }
 
-async function storageRequest() { throw new Error('External storage is not included; use local storage.'); }
+async function storageRequest(pathname, options = {}) {
+  const response = await fetch(`${STORAGE_API_URL}${pathname}`, {
+    ...options,
+    headers: { Authorization: `Bearer ${STORAGE_API_TOKEN}`, ...(options.headers || {}) },
+    duplex: options.body ? 'half' : undefined,
+  });
+  if (!response.ok) throw new Error((await response.json().catch(() => ({}))).error || `存储服务错误 (${response.status})`);
+  return response;
+}
 
 async function storageUploadChunkSizes(upload) {
   const response = await storageRequest(`/internal/share/objects/${encodeURIComponent(upload.storage_object_id)}`);
@@ -1219,9 +1303,8 @@ function recordUploadChunk(uploadId, userId, index, size) {
   return db.transaction(() => {
     const upload = db.prepare('SELECT * FROM uploads WHERE id = ? AND user_id = ?').get(uploadId, userId);
     if (!upload) return null;
-    const recorded = recordedUploadChunkSizes(upload);
-    const sizes = recorded && recorded.every(value => value === null || (Number.isSafeInteger(value) && value > 0))
-      ? recorded : Array(Number(upload.chunk_count)).fill(null);
+    const sizes = parseChunkSizes(upload.chunk_sizes_json, Number(upload.chunk_count))
+      || Array(Number(upload.chunk_count)).fill(null);
     if (sizes[index] !== null && sizes[index] !== undefined && sizes[index] !== size) {
       throw new Error('上传分片大小与已记录内容不一致');
     }
@@ -1329,7 +1412,10 @@ async function finalizeAccountDeletion(deletion) {
 }
 
 async function deliverDeletionCompletedNotice(deletion) {
-  const result = await notificationUnavailable();
+  const result = await transactionalMailRequest({
+    to: deletion.email,
+    ...deletionCompletedMessage(deletion)
+  });
   if (!result.ok) return;
   db.prepare(`DELETE FROM account_deletions
     WHERE id = ? AND status = 'erased_pending_notification'`).run(deletion.id);
@@ -1342,7 +1428,14 @@ async function removeLegacyFile(file) {
 
 async function cleanup() {
   const now = Date.now();
-
+  try {
+    const reminderSummary = await membershipExpiryReminderService.deliverDue(now);
+    if (reminderSummary.sent || reminderSummary.failed) {
+      console.info('Membership expiry reminder run:', reminderSummary);
+    }
+  } catch (error) {
+    console.error('Membership expiry reminder scan failed:', error);
+  }
   for (const user of db.prepare('SELECT id FROM users').all()) refreshUserEntitlements(user.id, now);
   await cleanupExpiredPaidStorage(now);
   const stale = db.prepare('SELECT * FROM uploads WHERE created_at < ?').all(now - UPLOAD_TTL);
@@ -1746,7 +1839,10 @@ app.post('/api/admin/users/:id/quota', requireAdmin, (req, res) => {
       .run(quotaBytes, overageSince, userId);
     auditAdmin('quota_adjusted', userId, { previousQuotaBytes: user.quota_bytes, quotaBytes, reason });
   })();
-  if (user.email) void notificationUnavailable().catch(() => {});
+  if (user.email) void transactionalMailRequest({
+    to: user.email, subject: 'Yuni Share · Storage Quota Updated',
+    text: `Hello,\n\nAn administrator has adjusted your encrypted storage quota to ${Math.round(quotaBytes / 1024 ** 3)} GB.\n\nAdministrator's note: ${reason}\n\nIf you believe this was made in error, please contact support.`
+  }).catch(() => {});
   res.json({ ok: true, quotaBytes });
 });
 
@@ -1770,7 +1866,10 @@ app.post('/api/admin/users/:id/refund-revoke-membership', requireAdmin, (req, re
     return { membership, storageAddons };
   })();
   if (!previous) return jsonError(res, 409, '该用户当前没有有效会员，无法执行会员退款');
-  if (user.email) void notificationUnavailable().catch(() => {});
+  if (user.email) void transactionalMailRequest({
+    to: user.email, subject: 'Yuni Share · Membership Cancelled Following Refund',
+    text: `Hello,\n\nYour membership has been cancelled as part of the refund process. Your encrypted storage quota has been restored to ${Math.round(USER_QUOTA / 1024 ** 3)} GB.\n\nAdministrator's note: ${reason}\n\nIf your stored files exceed the free quota, uploads are blocked while preview, download, and deletion remain available. You have 15 days from this cancellation to renew or reduce usage. After that period, the newest complete encrypted files are deleted until usage is within the free quota.`
+  }).catch(() => {});
   res.json({ ok: true, quotaBytes: USER_QUOTA });
 });
 
@@ -1779,7 +1878,7 @@ app.post('/api/register/code', async (req, res) => {
   if (!email) return jsonError(res, 400, '请输入有效的邮箱地址');
   if (INVITE_REGISTRATION_ENABLED && INVITE_CODE && req.body.inviteCode !== INVITE_CODE) return jsonError(res, 403, '注册码不正确');
   if (q.userByEmail.get(email)) return jsonError(res, 409, '该邮箱已注册');
-  const result = await verifyEnrollmentRequest('issue', email, '', requestIp(req));
+  const result = await mailRequest('issue', email, '', requestIp(req));
   if (!result.ok) return jsonError(res, result.status || 503, result.error || '验证码发送失败');
   res.status(202).json({ ok: true, retryAfterSeconds: result.retryAfterSeconds || 60 });
 });
@@ -1794,14 +1893,14 @@ app.post('/api/register', async (req, res) => {
   if (!email) return jsonError(res, 400, '请输入有效的邮箱地址');
   if (!validUsername(username)) return jsonError(res, 400, '用户名需为 3-32 位字母、数字或下划线');
   if (password.length < 10 || password.length > 128) return jsonError(res, 400, '密码需为 10-128 个字符');
-  if (!validCode(code)) return jsonError(res, 400, '请输入 6 位管理员注册码');
+  if (!validCode(code)) return jsonError(res, 400, '请输入 6 位邮箱验证码');
   if (!encryption || (req.body.recovery && !recovery)) {
     return jsonError(res, 400, '浏览器未能创建端到端加密材料，请刷新页面后重试');
   }
   if (INVITE_REGISTRATION_ENABLED && INVITE_CODE && req.body.inviteCode !== INVITE_CODE) return jsonError(res, 403, '注册码不正确');
   if (q.userByEmail.get(email)) return jsonError(res, 409, '该邮箱已注册');
   const passwordHash = await bcrypt.hash(password, 12);
-  const verified = await verifyEnrollmentRequest('verify', email, code, requestIp(req));
+  const verified = await mailRequest('verify', email, code, requestIp(req));
   if (!verified.ok || !verified.verified) return jsonError(res, verified.status || 401, verified.error || '验证码不正确或已过期');
   try {
     const result = db.prepare(`INSERT INTO users(
@@ -1886,9 +1985,55 @@ app.post('/api/passkey-login/verify', async (req, res) => {
   res.json({ ok: true, credentialId });
 });
 
-app.post("/api/password-reset/request", (req,res)=>res.status(501).json({error:'独立源码版未包含此扩展服务'}));
+app.post('/api/password-reset/request', async (req, res) => {
+  const email = normalizeEmail(req.body.email);
+  if (!email) return jsonError(res, 400, '请输入有效的邮箱地址');
+  const user = q.userByEmail.get(email);
+  // Explicit account feedback requested for the reset flow. Never send mail for unknown addresses.
+  if (!user) return res.status(404).json({ error: '该用户还不存在，你可以注册一个账户', code: 'ACCOUNT_NOT_FOUND' });
 
-app.post("/api/password-reset/complete", (req,res)=>res.status(501).json({error:'独立源码版未包含此扩展服务'}));
+  const resetToken = token();
+  const createdAt = Date.now();
+  try {
+    db.transaction(() => {
+      q.deleteUserPasswordResets.run(user.id);
+      db.prepare(`INSERT INTO password_resets(token_hash, user_id, email, expires_at, created_at)
+        VALUES (?, ?, ?, ?, ?)`).run(
+        hashToken(resetToken), user.id, email, createdAt + PASSWORD_RESET_TTL, createdAt
+      );
+    })();
+    const delivery = await transactionalMailRequest({
+      to: email,
+      ...passwordResetMessage(resetToken)
+    });
+    if (!delivery.ok) {
+      q.deleteUserPasswordResets.run(user.id);
+      return jsonError(res, delivery.status || 503, delivery.error || '密码重置邮件发送失败');
+    }
+    res.status(202).json({ ok: true, retryAfterSeconds: 60 });
+  } catch (error) {
+    q.deleteUserPasswordResets.run(user.id);
+    throw error;
+  }
+});
+
+app.post('/api/password-reset/complete', async (req, res) => {
+  const resetToken = String(req.body.token || '');
+  const password = String(req.body.password || '');
+  if (!/^[A-Za-z0-9_-]{32,128}$/.test(resetToken)) return jsonError(res, 400, '重置链接无效或已过期');
+  if (password.length < 10 || password.length > 128) return jsonError(res, 400, '密码需为 10-128 个字符');
+  const reset = q.passwordReset.get(hashToken(resetToken), Date.now());
+  if (!reset) return jsonError(res, 400, '重置链接无效、已过期或已使用');
+  const passwordHash = await bcrypt.hash(password, 12);
+  db.transaction(() => {
+    db.prepare('UPDATE users SET password_hash = ? WHERE id = ?').run(passwordHash, reset.account_id);
+    q.deleteUserSessions.run(reset.account_id);
+    q.deleteUserPasswordResets.run(reset.account_id);
+  })();
+  const deletion = q.scheduledDeletion.get(reset.account_id);
+  if (!deletion) setSession(res, reset.account_id);
+  res.json({ ok: true, signedIn: !deletion });
+});
 
 // Display names are not identities; retired name-based migration must not authenticate them.
 app.use('/api/legacy', (req, res) => jsonError(res, 410, '旧账户迁移已结束，请使用邮箱登录'));
@@ -1901,7 +2046,7 @@ app.post('/api/legacy/code', async (req, res) => {
   if (!valid) return jsonError(res, 401, '旧用户名或密码错误，或该账号已绑定邮箱');
   if (!email) return jsonError(res, 400, '请输入有效的邮箱地址');
   if (q.userByEmail.get(email)) return jsonError(res, 409, '该邮箱已被其他账号使用');
-  const result = await verifyEnrollmentRequest('issue', email, '', requestIp(req));
+  const result = await mailRequest('issue', email, '', requestIp(req));
   if (!result.ok) return jsonError(res, result.status || 503, result.error || '验证码发送失败');
   res.status(202).json({ ok: true, retryAfterSeconds: result.retryAfterSeconds || 60 });
 });
@@ -1916,7 +2061,7 @@ app.post('/api/legacy/bind', async (req, res) => {
   if (!valid) return jsonError(res, 401, '旧用户名或密码错误，或该账号已绑定邮箱');
   if (!email || !validCode(code)) return jsonError(res, 400, '邮箱或验证码格式无效');
   if (q.userByEmail.get(email)) return jsonError(res, 409, '该邮箱已被其他账号使用');
-  const verified = await verifyEnrollmentRequest('verify', email, code, requestIp(req));
+  const verified = await mailRequest('verify', email, code, requestIp(req));
   if (!verified.ok || !verified.verified) return jsonError(res, verified.status || 401, verified.error || '验证码不正确或已过期');
   try {
     db.prepare('UPDATE users SET email = ? WHERE id = ? AND email IS NULL').run(email, user.id);
@@ -1941,7 +2086,64 @@ app.post('/api/logout', (req, res) => {
   res.json({ ok: true });
 });
 
-app.post("/api/account-deletion", (req,res)=>res.status(501).json({error:'独立源码版未包含此扩展服务'}));
+app.post('/api/account-deletion', requireAuth, async (req, res) => {
+  const password = String(req.body.password || '');
+  const passkeyProof = String(req.body.passkeyProof || '');
+  const retentionDays = Number(req.body.retentionDays);
+  const email = normalizeEmail(req.user.email);
+  if (!email) return jsonError(res, 409, '请先绑定并验证邮箱后再申请删除账户');
+  if (![30, 60].includes(retentionDays)) return jsonError(res, 400, '只能选择 30 天或 60 天恢复期');
+  if (q.scheduledDeletion.get(req.user.id)) return jsonError(res, 409, '该账户已在删除流程中');
+  const passkeyVerified = passkeyProof
+    ? consumePasskeyActionProof(req, 'account-deletion', passkeyProof)
+    : null;
+  if (passkeyProof && !passkeyVerified) {
+    return jsonError(res, 401, 'Passkey 验证已失效。请重新验证后再提交。');
+  }
+  if (!passkeyVerified && !await bcrypt.compare(password, req.user.password_hash)) {
+    return jsonError(res, 401, '账户密码不正确');
+  }
+
+  const requestedAt = Date.now();
+  const deletion = {
+    id: crypto.randomUUID(),
+    user_id: req.user.id,
+    email,
+    username: req.user.username,
+    retention_days: retentionDays,
+    requested_at: requestedAt,
+    scheduled_for: requestedAt + retentionDays * 24 * 60 * 60 * 1000
+  };
+  const cancellationToken = token();
+  let notificationAccepted = false;
+  try {
+    db.prepare(`INSERT INTO account_deletions(
+      id, user_id, email, username, retention_days, requested_at, scheduled_for,
+      cancellation_token_hash, status
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'scheduled')`).run(
+      deletion.id, deletion.user_id, deletion.email, deletion.username, deletion.retention_days,
+      deletion.requested_at, deletion.scheduled_for, hashToken(cancellationToken)
+    );
+    const delivery = await transactionalMailRequest({
+      to: deletion.email,
+      ...deletionScheduledMessage(deletion, cancellationToken)
+    });
+    if (!delivery.ok) {
+      db.prepare(`DELETE FROM account_deletions WHERE id = ? AND status = 'scheduled'`).run(deletion.id);
+      return jsonError(res, delivery.status || 503, delivery.error || '删除确认邮件发送失败');
+    }
+    notificationAccepted = true;
+    q.deleteUserSessions.run(req.user.id);
+    await stopUserUploads(req.user.id).catch(error => console.error('Unable to stop uploads for scheduled deletion:', error));
+    res.clearCookie('share_session', { path: '/' });
+    res.status(202).json({ ok: true, scheduledFor: deletion.scheduled_for, retentionDays });
+  } catch (error) {
+    if (!notificationAccepted) {
+      db.prepare(`DELETE FROM account_deletions WHERE id = ? AND status = 'scheduled'`).run(deletion.id);
+    }
+    throw error;
+  }
+});
 
 app.post('/api/account-deletion/validate', (req,res)=>{
   res.set('Cache-Control','no-store');
@@ -1965,7 +2167,19 @@ app.post('/api/account-deletion/cancel', async (req, res) => {
     WHERE id = ? AND status = 'scheduled' AND scheduled_for > ?`).run(deletion.id, Date.now());
   if (!cancelled.changes) return jsonError(res, 409, '删除恢复链接已失效，删除流程无法撤销');
   // Recovery revokes deletion only; the user must sign in explicitly afterward.
-  if (user.email) void notificationUnavailable().catch(() => {});
+  if (user.email) void transactionalMailRequest({
+    to: user.email,
+    subject: 'Yuni Share · Account Deletion Cancelled',
+    text: [
+      'Your scheduled account deletion has been cancelled and your account is active again. Your files should be as you left them. Sign in and unlock your encrypted space to review your files.',
+      'Privacy: Your file contents and names are encrypted on your device before upload. Restoring your account does not change this protection or recover files that have already been permanently deleted.',
+      'Account deletion rules: A deletion request has a recovery period of 30 or 60 days, as selected when the request is made. After that period, the account and its encrypted files are scheduled for permanent deletion. This request has now been cancelled, and its recovery link can no longer be used.',
+      'Storage retention rules still apply separately: If paid storage expires and your account is over quota, a 15-day retention period applies. If the account remains over quota after that period, complete encrypted files are permanently deleted, starting with the most recently uploaded, until usage is within quota. Cancelling account deletion does not renew a membership or reverse completed storage cleanup.',
+      `Privacy Policy: ${PUBLIC_URL}/privacy`,
+      `Retention and Deletion Rules: ${PUBLIC_URL}/privacy#retention-and-deletion`,
+      'If you did not request this change, contact our account team at support@020126520.xyz.'
+    ].join('\n\n')
+  }).catch(() => {});
   res.json({ ok: true });
 });
 
@@ -2312,7 +2526,62 @@ function safeSignatureEqual(actual, expected) {
   return a.length === b.length && crypto.timingSafeEqual(a, b);
 }
 
-app.all("/api/payments/zhifux/notify", (req,res)=>res.status(501).json({error:'独立源码版未包含此扩展服务'}));
+app.all('/api/payments/zhifux/notify', (req, res) => {
+  const data = { ...req.query, ...req.body };
+  const orderNo = String(data.orderNo || '');
+  const order = db.prepare('SELECT * FROM payment_orders WHERE order_no = ?').get(orderNo);
+  const expected = paymentSignature(`${data.state || ''}${PAYMENT_MERCHANT_NUM}${orderNo}${data.amount || ''}${PAYMENT_SECRET}`);
+  if (!PAYMENT_ENABLED || !order || String(data.merchantNum || '') !== PAYMENT_MERCHANT_NUM
+    || String(data.state || '') !== '1' || !safeSignatureEqual(data.sign, expected)
+    || Number(data.amount) !== order.amount_cents / 100) return res.status(400).type('text').send('fail');
+  if (order.status !== 'paid') {
+    const orderType = order.order_type === 'addon' ? 'addon' : 'subscription';
+    const plan = orderType === 'addon' ? STORAGE_ADDONS[order.plan_id] : PLANS[order.plan_id];
+    if (!plan) return res.status(400).type('text').send('fail');
+    const now = Date.now();
+    const expiresAt = now + (orderType === 'subscription' && order.billing_cycle === 'yearly' ? 365 : 30) * 24 * 60 * 60 * 1000;
+    let activated = false;
+    let effectiveQuota = USER_QUOTA;
+    db.transaction(() => {
+      const markedPaid = db.prepare(`UPDATE payment_orders SET status = 'paid', paid_at = ?, platform_order_no = ? WHERE order_no = ? AND status = 'pending'`)
+        .run(now, String(data.platformOrderNo || ''), orderNo);
+      if (!markedPaid.changes) return;
+      if (orderType === 'addon') {
+        db.prepare(`INSERT INTO storage_addons(user_id, addon_id, quota_bytes, expires_at, created_at, updated_at)
+          VALUES (?, ?, ?, ?, ?, ?)`)
+          .run(order.user_id, order.plan_id, plan.quota, expiresAt, now, now);
+        const subscription = db.prepare('SELECT quota_bytes FROM subscriptions WHERE user_id = ? AND expires_at > ?').get(order.user_id, now);
+        const addonQuota = db.prepare(`SELECT COALESCE(SUM(quota_bytes), 0) AS total
+          FROM storage_addons WHERE user_id = ? AND expires_at > ?`).get(order.user_id, now);
+        effectiveQuota = subscription ? Number(subscription.quota_bytes) + Number(addonQuota.total) : USER_QUOTA;
+      } else {
+        db.prepare(`INSERT INTO subscriptions(user_id, plan_id, quota_bytes, expires_at, updated_at) VALUES (?, ?, ?, ?, ?)
+          ON CONFLICT(user_id) DO UPDATE SET plan_id = excluded.plan_id, quota_bytes = excluded.quota_bytes,
+          expires_at = excluded.expires_at, updated_at = excluded.updated_at`)
+          .run(order.user_id, order.plan_id, plan.quota, expiresAt, now);
+        const addonQuota = db.prepare(`SELECT COALESCE(SUM(quota_bytes), 0) AS total
+          FROM storage_addons WHERE user_id = ? AND expires_at > ?`).get(order.user_id, now);
+        effectiveQuota = Number(plan.quota) + Number(addonQuota.total);
+      }
+      const used = Number(q.usage.get(order.user_id).bytes);
+      const account = q.userById.get(order.user_id);
+      const overageSince = used > effectiveQuota
+        ? Number(account?.storage_overage_since) || now
+        : null;
+      db.prepare('UPDATE users SET quota_bytes = ?, storage_overage_since = ? WHERE id = ?')
+        .run(effectiveQuota, overageSince, order.user_id);
+      activated = true;
+    })();
+    const member = q.userById.get(order.user_id);
+    if (activated && member?.email) {
+      const message = orderType === 'addon'
+        ? { subject: 'Yuni Share · Additional Storage Activated', text: `Your ${plan.name} monthly storage add-on is active. Your total encrypted storage quota is now ${Math.round(effectiveQuota / 1024 ** 3)} GB. The additional storage is active until ${formatUtcTime(expiresAt)} and requires an active Yuni Share membership.` }
+        : { subject: 'Yuni Share · Membership Activated', text: `Your ${plan.name} membership is active. Your encrypted storage quota is now ${Math.round(effectiveQuota / 1024 ** 3)} GB and the subscription is active until ${formatUtcTime(expiresAt)}.` };
+      void transactionalMailRequest({ to: member.email, ...message }).catch(() => {});
+    }
+  }
+  res.type('text').send('success');
+});
 
 app.get('/api/plans', (req, res) => res.json({
   free: { name: 'Free', quota: USER_QUOTA },
@@ -2332,9 +2601,56 @@ app.get('/api/subscription', requireAuth, (req, res) => {
   });
 });
 
-app.post("/api/payment-orders", (req,res)=>res.status(501).json({error:'独立源码版未包含此扩展服务'}));
+app.post('/api/payment-orders', requireAuth, async (req, res, next) => {
+  try {
+    if (!PAYMENT_ENABLED) return jsonError(res, 503, '支付服务尚未配置');
+    const now = Date.now();
+    const orderType = String(req.body.orderType || 'subscription');
+    const planId = String(req.body.planId || '');
+    const billingCycle = String(req.body.billingCycle || 'monthly');
+    const entitlements = refreshUserEntitlements(req.user.id, now);
+    const activeSubscription = entitlements.subscription && Number(entitlements.subscription.expires_at) > now;
+    let plan;
+    let amountCents;
+    if (orderType === 'subscription') {
+      plan = PLANS[planId];
+      if (!plan || !['monthly', 'yearly'].includes(billingCycle)) return jsonError(res, 400, '套餐或周期无效');
+      if (activeSubscription) return jsonError(res, 409, '当前会员仍在有效期内，不能重复购买或延长。空间不足时请购买独立扩容包。');
+      amountCents = plan[billingCycle];
+    } else if (orderType === 'addon') {
+      plan = STORAGE_ADDONS[planId];
+      if (!plan || billingCycle !== 'monthly') return jsonError(res, 400, '扩容包无效');
+      if (!activeSubscription) return jsonError(res, 409, '独立扩容包仅向有效会员开放，请先订阅基础会员。');
+      amountCents = plan.monthly;
+    } else {
+      return jsonError(res, 400, '购买类型无效');
+    }
+    db.prepare(`UPDATE payment_orders SET status = 'expired'
+      WHERE user_id = ? AND order_type = ? AND status = 'pending'`)
+      .run(req.user.id, orderType);
+    const orderNo = `YS${Date.now().toString(36)}${crypto.randomBytes(5).toString('hex')}`.toUpperCase();
+    const notifyUrl = `${PUBLIC_URL}/api/payments/zhifux/notify`;
+    const amount = (amountCents / 100).toFixed(2);
+    db.prepare(`INSERT INTO payment_orders(order_no, user_id, plan_id, billing_cycle, amount_cents, status, created_at, order_type)
+      VALUES (?, ?, ?, ?, ?, 'pending', ?, ?)`).run(orderNo, req.user.id, planId, billingCycle, amountCents, now, orderType);
+    const params = new URLSearchParams({ merchantNum: PAYMENT_MERCHANT_NUM, orderNo, amount, notifyUrl,
+      returnUrl: `${PUBLIC_URL}/?payment=return`, payType: PAYMENT_PAY_TYPE,
+      subject: orderType === 'addon' ? `Yuni Share ${plan.name} 月度扩容包` : `Yuni Share ${plan.name} ${billingCycle === 'yearly' ? '年订阅' : '月订阅'}`,
+      sign: paymentSignature(`${PAYMENT_MERCHANT_NUM}${orderNo}${amount}${notifyUrl}${PAYMENT_SECRET}`), returnType: 'json' });
+    const response = await fetch(`${PAYMENT_API_ROOT}/startOrder?${params}`, { method: 'POST' });
+    const result = await response.json().catch(() => null);
+    const payUrl = secureExternalUrl(result?.data?.payUrl);
+    if (!response.ok || !result?.success || !payUrl) throw new Error(result?.msg || '创建支付订单失败');
+    db.prepare('UPDATE payment_orders SET pay_url = ? WHERE order_no = ?').run(payUrl, orderNo);
+    res.status(201).json({ orderNo, payUrl, expiresInMinutes: 15, orderType });
+  } catch (error) { next(error); }
+});
 
-app.get("/api/payment-orders/:orderNo", (req,res)=>res.status(501).json({error:'独立源码版未包含此扩展服务'}));
+app.get('/api/payment-orders/:orderNo', requireAuth, (req, res) => {
+  const order = db.prepare('SELECT order_no, status FROM payment_orders WHERE order_no = ? AND user_id = ?').get(req.params.orderNo, req.user.id);
+  if (!order) return jsonError(res, 404, '支付订单不存在');
+  res.json({ orderNo: order.order_no, status: order.status });
+});
 
 app.post('/api/profile/avatar', requireAuth, async (req, res, next) => {
   try {
@@ -2753,7 +3069,7 @@ app.post('/api/uploads/:id/complete', requireAuth, async (req, res) => {
         id, user_id, upload_id, original_name, stored_name, mime_type, size, logical_size, chunk_sizes_json, created_at,
         encryption_version, encrypted_metadata, encrypted_metadata_iv, chunk_size, chunk_count,
         listing_category, inside_folder
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`) 
         .run(fileId, req.user.id, upload.id, upload.original_name, storedName, upload.mime_type, storedSize,
           variableChunks ? upload.logical_size : null, JSON.stringify(chunkSizes), Date.now(),
           upload.encryption_version, upload.encrypted_metadata, upload.encrypted_metadata_iv, upload.chunk_size, upload.chunk_count,
@@ -3054,7 +3370,33 @@ app.get('/admin.html', (req, res) => res.sendFile(path.join(process.cwd(), 'publ
 app.get('/admin.js', (req, res) => res.sendFile(path.join(process.cwd(), 'public', 'admin.js')));
 app.get('/admin.css', (req, res) => res.sendFile(path.join(process.cwd(), 'public', 'admin.css')));
 
-app.get('/.well-known/assetlinks.json', (req,res)=>res.json([]));
+app.get('/.well-known/assetlinks.json', (req, res) => {
+  res.set({
+    'Content-Type': 'application/json; charset=utf-8',
+    'Cache-Control': 'public, max-age=3600, must-revalidate'
+  });
+  res.json([{
+    relation: [
+      'delegate_permission/common.handle_all_urls',
+      'delegate_permission/common.get_login_creds'
+    ],
+    target: {
+      namespace: 'android_app',
+      package_name: 'xyz.yunishare.app',
+      sha256_cert_fingerprints: [ANDROID_APP_CERT_SHA256]
+    }
+  }, {
+    relation: [
+      'delegate_permission/common.handle_all_urls',
+      'delegate_permission/common.get_login_creds'
+    ],
+    target: {
+      namespace: 'android_app',
+      package_name: 'xyz.yunishare.native',
+      sha256_cert_fingerprints: ['E3:85:38:A5:7E:89:00:92:36:D7:E2:BC:1E:FE:48:19:71:2F:96:A5:3A:B0:0D:DC:06:08:B2:5F:84:53:14:1A']
+    }
+  }]);
+});
 
 function renderLegalPage(content, activeKey) {
   const legalEntries = [...SITE_CONTENT_DEFINITIONS.entries()].filter(([, definition]) => definition.route);
@@ -3062,9 +3404,9 @@ function renderLegalPage(content, activeKey) {
   const footer = legalEntries.map(([, definition]) => `<a href="${definition.route}">${escapeSiteHtml(definition.label)}</a>`).join('');
   return `<!doctype html>
 <html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<title>${escapeSiteHtml(content.title)} | YUNI Share</title><link rel="icon" type="image/png" href="/brand.svg">
+<title>${escapeSiteHtml(content.title)} | YUNI Share</title><link rel="icon" type="image/png" href="/li-bai-avatar.png">
 <link rel="stylesheet" href="/legal.css" integrity="sha384-Sr/otJwfVIMUagABD9DqqmjzP6LSeSYAcLIPwNhZkvKNrJlvjlAWnJ7MSJj5hryi" crossorigin="anonymous"></head>
-<body><header class="topbar"><a class="brand" href="/"><img src="/brand.svg" alt=""><span>YUNI Share</span></a><a class="back" href="/">返回文件空间</a></header>
+<body><header class="topbar"><a class="brand" href="/"><img src="/li-bai-avatar.png" alt=""><span>YUNI Share</span></a><a class="back" href="/">返回文件空间</a></header>
 <main><p class="eyebrow">YUNI Share</p><h1>${escapeSiteHtml(content.title)}</h1>
 <p class="intro">${escapeSiteHtml(content.intro)}</p><p class="meta">${escapeSiteHtml(content.meta)}</p>
 <nav class="legalnav" aria-label="政策页面切换">${navigation}</nav>${content.body_html || '<p>本页面内容正在更新。</p>'}</main>

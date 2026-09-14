@@ -60,7 +60,7 @@ A website supplies the JavaScript your browser runs. If it supplies maliciously 
 
 You can inspect key derivation, content encryption, metadata protection, and server-side access checks instead of relying only on product descriptions.
 
-This is a standalone core-review edition, not the complete live service or Android application. Email and payment services are absent. Administrator-issued registration codes authorize registration for an email string but do not verify mailbox ownership. See [About this edition](README.md#about-this-edition).
+The application files match the running Yuni Share snapshot checked on September 14, 2026. Environment files, secrets, user data, and non-source distributions are excluded. The original registration, email, payment, and storage call paths are present; separately operated services and the native Android application are not included. See [Repository scope](README.md#repository-scope).
 
 The [verification record](VERIFICATION.md) describes the checks performed. They do not amount to an independent comprehensive security audit, and the repository offers no guarantee of absolute security.
 

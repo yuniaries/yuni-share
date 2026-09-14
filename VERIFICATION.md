@@ -1,39 +1,25 @@
-# Verification Record
+# Source Verification
 
-This page helps you distinguish tested behavior from areas that still require assessment.
+## Snapshot identity
 
-## Recorded checks — September 14, 2026
+The included application files were read from the running `yuni-share-app` container on September 14, 2026.
 
-Checks were performed against an isolated local edition, not the live service.
+Container image label: `yuni-share-app:share-style-integrity-20260913-r1`.
 
-- Docker image build completed on Linux amd64 with Node.js 22 and locked dependencies installed through `npm ci`.
-- All four automated tests passed inside the image.
-- Local script and stylesheet references existed, and declared SHA-384 integrity values matched their assets.
-- Tests exercised the actual frontend chunk functions: encryption/decryption, incorrect authenticated data, modified ciphertext, and rejection when a different password-derived key was used.
-- Enrollment tests covered email binding, single use, five-attempt lockout, and an explicit unavailable response for code delivery.
-- An isolated smoke test covered registration, session access, two-chunk compressed-format upload, completion, byte-for-byte ciphertext download comparison, logout, unauthenticated rejection, subsequent sign-in, and HTTP 501 responses for unavailable integrations.
-- The publication directory was checked for APKs, databases, user ciphertext, environment secrets, and email transports. Pattern checks found no matching common private-key/token markers or original site addresses. Pattern scanning is not a guarantee that every possible issue has been detected.
+The files listed in [SOURCE-SHA256.txt](SOURCE-SHA256.txt) were compared with SHA-256 values obtained directly from the running container. Their bytes matched at capture and local verification time. The list covers the included application files, not repository documentation or all infrastructure.
 
-## What these checks do not establish
+## Exclusions
 
-They are not a comprehensive security audit, penetration test, dependency vulnerability assessment, or formal cryptographic proof.
+Environment files, deployment secrets, user data, databases, installed dependency directories, APK distributions, update manifests, and historical backups are not published.
 
-Recorded testing does not cover full browser visual acceptance, physical Passkeys, every preview/editing path, long-running concurrent transfers, or native Windows npm installation. External storage, email, payments, and Android are outside this edition.
+External email, payment, and storage services run separately and are not part of this application source snapshot. Calls to those services remain in the code.
 
-These results do not establish that the live service runs identical code.
+## What the comparison means
 
-## Reproducing the checks
+You can identify the exact application-file snapshot disclosed here and compare its files with the published hashes. No enrollment substitute, integration stub, or local-storage patch from the earlier review edition remains in these runtime files.
 
-Execution requires ownership or separate written authorization under [LICENSE](LICENSE).
+The date matters: later deployments may change. The hash inventory records this comparison; it is not a third-party attestation, reproducible-build result, or independent security audit.
 
-```sh
-docker compose build
-docker compose run --rm share npm test
-docker compose run --rm share node scripts/smoke.mjs
-```
+## Earlier tests
 
-The smoke script uses a temporary data directory and port 18292 inside the container. It does not reuse an existing database. Do not adapt it to target a live production service.
-
-## Documentation language
-
-The public documentation is written in English. Application interface strings remain in their original language; documentation changes do not constitute a new functional test run.
+Earlier verification results in Git history refer to the previous adapted edition. They are not carried forward as runtime acceptance results for this snapshot. The restored snapshot has not undergone a new complete browser, authenticator, payment, or transfer test in this publication step.

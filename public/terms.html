@@ -1,1 +1,46 @@
-<!doctype html><html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="stylesheet" href="/legal.css"><title>服务条款</title><main><h1>服务条款</h1><p>这是独立部署源码示例，不代表原线上服务的政策或承诺。部署者应在对外开放前填写自身政策、运营主体与联系方式。</p><h2>加密与数据范围</h2><p>文件内容和文件元数据在客户端加密；账户邮箱、文件大小、时间、分类等并非全部隐藏。头像不受文件端到端加密保护。请阅读仓库 SECURITY.md。</p><h2 id="retention-and-deletion">保留与删除</h2><p>此版没有邮件恢复服务，账户删除申请入口停用。文件删除、临时上传清理和配额相关逻辑仍存在，请按自身运营规则审查配置。</p><p><a href="/">返回首页</a></p></main></html>
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>服务条款 | YUNI Share</title>
+  <link rel="icon" type="image/png" href="/li-bai-avatar.png">
+  <link rel="stylesheet" href="/legal.css" integrity="sha384-Sr/otJwfVIMUagABD9DqqmjzP6LSeSYAcLIPwNhZkvKNrJlvjlAWnJ7MSJj5hryi" crossorigin="anonymous">
+</head>
+<body>
+  <header class="topbar"><a class="brand" href="/"><img src="/li-bai-avatar.png" alt=""><span>YUNI Share</span></a><a class="back" href="/">返回文件空间</a></header>
+  <main>
+    <p class="eyebrow">YUNI Share</p>
+    <h1>服务条款</h1>
+    <p class="intro">这些条款说明 YUNI Share 目前提供什么服务、对用户的基本要求，以及服务的边界。</p>
+    <p class="meta">生效日期：August 20, 2026。当前服务处于早期开发和小规模测试阶段。</p>
+    <nav class="legalnav" aria-label="政策页面切换">
+      <a class="active" aria-current="page" href="/terms">服务条款</a>
+      <a href="/user-agreement">用户协议</a>
+      <a href="/privacy">隐私政策</a>
+      <a href="/disclaimer">免责声明</a>
+    </nav>
+    <h2>1. 服务说明</h2>
+    <p>YUNI Share 是一个需要账户登录的私人文件空间。新文件在受支持浏览器或 Yuni Share Android 应用中先进行本地加密，再被拆分上传并保存为密文。服务不会主动压缩或转码用户上传的文件。</p>
+    <p>端到端加密不等于绝对可用性保证。文件上传、解锁、照片与视频自动备份和解密下载均依赖兼容客户端、网络、设备存储、系统权限和服务可用状态。关闭网页会中止仍在浏览器内执行的上传；Android 后台任务可能受系统省电与网络限制而延后。未完成的服务器临时分片会按<a href="/privacy#retention-and-deletion">系统清理规则</a>处理。</p>
+    <h2>2. 账户与访问</h2>
+    <p>注册需要有效邮箱、账户密码、独立的加密密码和当前开放所需的邀请码。用户须妥善保管这两类密码与已登录设备。请勿共享账户，也不得通过自动化方式绕过配额、访问控制或安全限制。</p>
+    <div class="notice warning"><strong>加密密码与 Passkey</strong>端到端加密空间可由独立的加密密码或兼容的 Passkey 在受支持客户端中解锁。Passkey 也是默认的加密密码重设方式；其保存位置由用户的浏览器、Android 系统、设备或密码管理器决定，YUNI Share 不保存其私钥。加密密码、Passkey 私钥和未包装的数据密钥均不会发送给 YUNI Share，服务器无法据此直接解密文件。若加密密码和所有 Passkey 均不可用，已加密文件无法恢复。</div>
+    <h2>3. 可接受使用</h2>
+    <p>用户对其上传、保存、下载和分享的内容负责。不得使用服务存储、传播或协助传播违法内容、侵权内容、恶意软件、诈骗材料、侵犯他人隐私的材料，或试图干扰服务与其他用户的内容。</p>
+    <p>在存在安全风险、滥用迹象、法律要求或保护他人权利的必要时，运营方可以采取合理的访问限制、调查或暂停措施。除紧急情形或法律禁止外，运营方会尽量提供说明。</p>
+    <h2>4. 存储、可用性与变更</h2>
+    <p>账户容量由创建时的配额和当时资源决定，测试期内可能调整。我们会尽力维护服务，但不承诺不中断、无错误或永久保存。功能、容量、安全机制和条款可能在合理通知后调整；重大变化会在本页面或站内显著位置说明。</p>
+    <h2>5. 用户内容与知识产权</h2>
+    <p>用户保有其内容的权利。文件内容、文件名、目录路径、媒体类型和恢复文件所需的密钥材料均在用户设备上加密后上传，运营方仅接收、保存和传输密文，无法读取原始内容或真实目录结构。锁定状态只显示匿名的“文件”或“文件夹”类别；服务端仅处理提供存储所必需的随机标识、密文长度、时间和该匿名类别。用户对这些密文及必要技术数据的授权不构成对原始内容的使用、许可或处分权。</p>
+    <h2>6. 会员订阅、配额与退款</h2>
+    <p>免费账户初始提供 5GB 空间。付费套餐按月或按年预付；支付完成以支付服务向本服务发出的、经签名验证的异步通知为准，支付完成页不构成开通凭据。付费订阅或容量附加权益到期时，账户恢复免费 5GB 配额。若当时已用空间超过 5GB，账户进入 15 个自然日的超额只读保留期：用户仍可登录并解锁加密空间、预览、下载和删除文件，但在用量回到当前配额内或续费恢复足够配额前，不得继续上传造成或维持超额状态。保留期从相关付费容量权益到期时开始计算。</p>
+    <p>在 15 日保留期结束前，用户应续费、下载备份或主动删除文件，使已用空间回到免费配额内。期限届满时，如账户仍超过免费 5GB，服务会从最新上传的完整加密文件开始自动永久删除，直到剩余用量不超过当前配额；由于加密文件不可安全拆分，删除后的实际用量可能低于 5GB。自动删除不可撤销，服务端无法恢复明文或已删除的加密分片。续费恢复足够容量或在期限内主动降至配额内会停止本次超额清理流程。除适用法律另有规定或服务未能提供已付费权益外，已开通的数字存储订阅不支持按已使用期间退款。用户应始终自行保留独立备份。</p>
+    <h2>7. 终止与数据请求</h2>
+    <p>用户可在已登录账户中申请删除账户，并自行选择 30 或 60 天恢复期；也可通过<a href="mailto:support@020126520.xyz?subject=YUNI%20Share%20account%20or%20data%20request">数据与账户联系渠道</a>提出访问、更正、导出或删除请求。删除确认邮件中的恢复链接在用户选择的恢复期结束前有效，无需旧登录密码。成功恢复后，删除安排会立即撤销，链接也会立即失效，不能再次使用。恢复链接本身就是一次性恢复凭据；任何取得并打开有效恢复链接的人都可能恢复账户，因此不得转发、公开或交给他人。请求的处理方式、可行性和保留例外见<a href="/privacy">隐私政策</a>。</p>
+    <h2>8. 适用范围</h2>
+    <p>这些条款不排除适用法律赋予消费者或数据主体的强制性权利。如本条款的任何部分无效，其余部分继续适用。</p>
+  </main>
+  <footer class="footer"><a href="/terms">服务条款</a><a href="/user-agreement">用户协议</a><a href="/privacy">隐私政策</a><a href="/disclaimer">免责声明</a></footer>
+</body>
+</html>

@@ -2,74 +2,58 @@
 
 Your files, protected before they leave your browser.
 
-Yuni Share is a personal file-storage application with client-side encryption. Your browser encrypts file contents before uploading them and decrypts them when you download. File names, paths, and per-file keys are also stored in encrypted metadata.
+Yuni Share provides personal file storage with client-side encryption. Your browser encrypts file contents before upload and decrypts them when you download. File names, paths, and per-file keys are protected within encrypted metadata.
 
-This repository lets you examine how that protection works: how keys are created, how files are encrypted in chunks, and how the server controls access to stored ciphertext.
+This repository contains the application source used by Yuni Share, excluding environment files, deployment secrets, user data, and non-source distribution artifacts. The included application files match the running application snapshot checked on **September 14, 2026**. See [Source Verification](VERIFICATION.md) for the scope and file hashes.
 
 ## What you can explore
 
-- **File protection:** independent random file keys and AES-GCM encryption with integrity checks.
+- **File protection:** independent random file keys and AES-GCM chunk encryption.
 - **Private metadata:** encrypted file names, paths, and per-file keys.
 - **File management:** uploads, downloads, previews, search, and folders.
-- **Account access:** email-based sign-in, password hashing, sessions, username changes, and Web Passkey flows.
-- **Chunked transfers:** upload, resumption-related handling, completion checks, and download reconstruction.
-- **Storage management:** local ciphertext storage, SQLite records, quotas, and administrative interfaces.
+- **Account access:** registration, sign-in, sessions, username changes, and Web Passkey flows.
+- **Transfers and storage:** chunk handling, completion checks, local and external storage paths, quotas, and administrative interfaces.
 
 ## How your files are protected
 
-### Your encrypted space
+Your browser generates a vault key. Your separate encryption password is processed with PBKDF2-SHA256 to derive a key that protects it. Your sign-in password and encryption password serve different purposes.
 
-Your browser generates a vault key. A separate encryption password is processed with PBKDF2-SHA256 to derive a key that encrypts the vault key. Your sign-in password and encryption password serve different purposes.
+Each upload receives a random 256-bit file key and a file nonce. Chunk encryption binds content to the upload identifier and chunk index using authenticated data. The client verifies and decrypts downloaded chunks before reconstructing the file.
 
-### Your files
+Format version 2 can apply lossless gzip compression before encryption when supported and beneficial. It does not perform lossy image or video transcoding.
 
-Each upload receives a random 256-bit file key and a file nonce. Each chunk uses an initialization vector derived from that nonce and its index. Additional authenticated data binds the ciphertext to the upload identifier and chunk index.
-
-When you download a file, the client verifies and decrypts its chunks before reconstructing the content. Format version 2 can apply lossless gzip compression before encryption when supported and beneficial; it does not perform lossy image or video transcoding.
-
-### Your privacy
-
-File content and sensitive file metadata are encrypted, but not every account or storage detail is hidden. The server still handles information such as your email address, timestamps, ciphertext size, some logical sizes, and category hints. Account avatars are outside the file-encryption boundary.
-
-Read [Your Files and Privacy](SECURITY.md) for practical explanations and limitations. Source visibility supports inspection; it is not a security certification or proof that a live website serves identical code.
+File content and sensitive metadata are encrypted, but account and storage information such as email addresses, timestamps, sizes, and category hints remains visible to the server. Avatars are outside file encryption. Read [Your Files and Privacy](SECURITY.md) for details.
 
 ## Find your way around the code
 
-| Location | What it explains |
+| Location | What you can inspect |
 | --- | --- |
-| [public/app.js](public/app.js) | Client-side key handling, encryption, transfers, and file interactions |
-| [server.mjs](server.mjs) | Sessions, authorization, storage, and account management |
-| [enrollment.mjs](enrollment.mjs) | Email-bound, single-use registration codes |
+| [public/app.js](public/app.js) | Client-side encryption, key handling, and file interactions |
+| [server.mjs](server.mjs) | Authentication, file permissions, account workflows, and storage |
+| [membership-expiry.mjs](membership-expiry.mjs) | Membership reminder scheduling and notification logic |
 | [username-migration.mjs](username-migration.mjs) | Username schema migration |
-| [public/register-steps.js](public/register-steps.js) | Step-by-step registration |
-| [test/](test/) | Encryption, enrollment, and static-resource checks |
-| [scripts/smoke.mjs](scripts/smoke.mjs) | Isolated account and transfer checks |
+| [public/register-steps.js](public/register-steps.js) | Registration steps |
+| [public/](public/) | Web pages, scripts, styles, and referenced assets |
 
-For encryption review, start with these functions in `public/app.js`:
+For encryption review, look for `derivePasswordWrappingKey`, `wrapVaultKey`, `encryptMetadata`, `prepareEncryptedUpload`, `chunkIv`, `chunkAad`, and `encryptChunk`.
 
-- `derivePasswordWrappingKey` and `wrapVaultKey`: password derivation and vault-key protection.
-- `encryptMetadata`: file metadata encryption.
-- `prepareEncryptedUpload`: per-file key generation and upload preparation.
-- `chunkIv`, `chunkAad`, and `encryptChunk`: chunk encryption and binding.
-- `decodeFileChunk`: reconstruction after decryption.
+## Repository scope
 
-## Technology
+Application behavior has not been replaced with mock registration or disabled integration stubs. The original email, payment, and storage call paths are included. Their separately operated services, credentials, environment settings, databases, uploads, APKs, and historical backups are not included.
 
-The client uses JavaScript and the browser Web Crypto API. The server uses Node.js, Express, and SQLite, with WebAuthn verification provided by `@simplewebauthn/server`. Dependency versions are recorded in [package-lock.json](package-lock.json).
+This is the Web application source, not the native Android source. Interface strings retain their production language. Supporting repository documentation is in English.
 
-## About this edition
+The recorded match applies to the dated snapshot; later live deployments may differ. Publication makes the code available for inspection and does not itself constitute an independent security audit.
 
-This is a standalone core-review edition, not a complete production mirror or the native Android client.
+## Technical reference
 
-Email delivery, commercial payment processing, and private storage-service integrations are not included. Registration uses administrator-issued codes bound to an email string; this does not establish email ownership. Email password resets, new account-deletion requests, and payment entry points are disabled. Local storage is implemented, while some extension interfaces and data structures remain available for inspection.
+The application uses JavaScript, Web Crypto, Node.js, Express, SQLite, and WebAuthn. Exact dependency resolutions appear in [package-lock.json](package-lock.json).
 
-The application interface currently retains its original Chinese strings. The repository documentation is in English.
-
-You can read the [deployment reference](DEPLOYMENT.md), [verification record](VERIFICATION.md), and [edition notes](CHANGES.md) to understand its scope. Execution instructions are for the rights holder or separately authorized users.
+For environment requirements, read [Deployment Reference](DEPLOYMENT.md). For snapshot provenance and exclusions, read [Edition History](CHANGES.md).
 
 ## Questions and security feedback
 
-For general questions, open an Issue describing the relevant file, function, and expected behavior. Do not post passwords, keys, recovery links, databases, or user files. For sensitive findings, contact the [maintainer](https://github.com/yuniaries) to arrange a private reporting channel first.
+General questions are welcome in Issues. Describe the relevant file, function, and expected behavior. For sensitive findings, contact the [maintainer](https://github.com/yuniaries) to arrange a private channel first. Never post real passwords, keys, recovery links, databases, or user files.
 
 ## Rights and permissions
 

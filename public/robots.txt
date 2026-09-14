@@ -4,4 +4,4 @@ Disallow: /admin
 Disallow: /s/
 Disallow: /auth/
 Disallow: /avatars/
-Sitemap: /sitemap.xml
+Sitemap: https://share.020126520.xyz/sitemap.xml

@@ -1,9 +1,0 @@
-{
-  "removed": [
-    "public/android-update.json",
-    "public/app.js.bak-20260825125748",
-    "public/downloads"
-  ],
-  "edition": "standalone-review",
-  "originalArchiveUnchanged": true
-}

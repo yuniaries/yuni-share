@@ -1,39 +1,15 @@
-# Edition Notes
+# Edition History
 
-This page explains what you can expect from the public review edition and how its scope differs from the full service.
+## Production-source snapshot — September 14, 2026
 
-## Included
+The current application files were copied from the running Yuni Share container and checked against SHA-256 hashes obtained from that container. They retain production application logic, including registration, notifications, payment integration, and storage paths.
 
-The edition retains core client-side encryption, file management, account authorization, and local storage logic. Supporting tests and configuration examples make these components easier to inspect.
+Environment files, secrets, user data, installed dependencies, APK distributions, update manifests, and historical backups are excluded. Repository documentation and the rights notice are publication materials, not runtime files.
 
-## External services
+## Earlier review edition
 
-- Email delivery and notification templates are excluded. Notification extension points return an unavailable result.
-- Payment callbacks and order-processing implementations are excluded; corresponding entry points return HTTP 501.
-- The private storage-service transport is excluded. This edition uses local storage; retained remote-storage branches cannot be enabled.
-- APK packages, update manifests, historical backups, production configuration, and user data are excluded.
+Earlier commits contained a standalone adaptation with administrator-issued registration codes, unavailable integration stubs, local-storage fixes, and adapted assets. Those changes have been replaced with the corresponding production files in the current snapshot.
 
-Quota models, subscription structures, and some extension interfaces remain so you can understand their relationship to file accounting and authorization.
+Tests and deployment scaffolding specific to that adaptation were removed. Their earlier results should not be interpreted as test results for the restored production snapshot. Prior commits remain in Git history for transparency.
 
-## Accounts
-
-Registration uses an administrator-issued, email-bound, single-use code with an expiry and an attempt limit. It does not establish mailbox ownership.
-
-Email password resets and new account-deletion requests are disabled. Recovery validation remains available for inspection, without email delivery. This edition is not intended to accept an existing production database.
-
-## Presentation
-
-Production domain references, Android certificate associations, and the personal avatar were removed. A simple SVG provides the default brand image. Policy pages are placeholders for separately authorized deployments.
-
-## Local-storage fixes
-
-Two changes support complete transfers through the local storage implementation:
-
-- The completion INSERT now has 17 placeholders for its 17 columns.
-- Recording another chunk preserves already completed chunk sizes when other entries remain null, rather than resetting the partial record.
-
-The verification record describes the isolated transfer checks.
-
-## Publication scope
-
-This is a derived review edition, not evidence of production-code equivalence. Documentation and publication permissions are described in [README.md](README.md) and [LICENSE](LICENSE).
+See [Source Verification](VERIFICATION.md) for the current file inventory.

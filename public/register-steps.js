@@ -11,7 +11,7 @@ const registering=()=>tab.classList.contains('active');
 function render(focus=false){
  const active=registering();form.noValidate=active;panel.classList.toggle('register-stepped',active);panel.dataset.step=String(step);
  progress.hidden=nav.hidden=!active;back.hidden=!active||step===0;next.hidden=step===3;
- progress.textContent=['1 / 4 · 输入邮箱','2 / 4 · 设置登录信息','3 / 4 · 设置加密密码','4 / 4 · 输入注册码'][step];
+ progress.textContent=['1 / 4 · 输入邮箱','2 / 4 · 设置登录信息','3 / 4 · 设置加密密码','4 / 4 · 验证邮箱'][step];
  if(active&&focus)form.elements[groups[step][0]].focus();
 }
 function validate(index){for(const name of groups[index]){const input=form.elements[name];if(!input.checkValidity()){step=index;render(true);input.reportValidity();return false;}}return true;}

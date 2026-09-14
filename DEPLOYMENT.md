@@ -1,81 +1,39 @@
 # Deployment Reference
 
-This reference explains how the components fit together. **Execution is limited to the rights holder or users with separate written authorization.** Reading these instructions does not grant permission to run, deploy, or modify the software. See [LICENSE](LICENSE).
+This page describes the application's requirements for readers inspecting its architecture. Running or deploying the software requires ownership or separate written authorization under [LICENSE](LICENSE).
 
-## Start with an isolated environment
+## What is included?
 
-The edition consists of a Web client, a Node.js backend, SQLite, and local ciphertext storage. It does not require email, payment, or private storage services.
+The repository includes the Web client, Node.js application server, dependency manifests, and application modules from the dated production snapshot. It does not contain a ready-to-run copy of production infrastructure.
 
-Use a fresh data directory or volume. Do not import a live database. Retained quota-cleanup logic can delete eligible ciphertext, so production data must not be used for verification.
+## Runtime requirements
 
-## Docker Compose
+The application uses Node.js, Express, better-sqlite3, and browser Web Crypto. Install dependencies according to `package-lock.json` in an appropriately authorized environment. Native dependency installation may require a compiler and Python when compatible prebuilt binaries are unavailable.
 
-You need Docker Engine or Docker Desktop with Compose. On Windows, use Linux containers.
+The server resolves public assets relative to its working directory, so its working directory must be the repository root.
 
-```sh
-docker compose up -d --build
-docker compose logs --tail=50 share
-```
+## Environment configuration
 
-The default host binding is `127.0.0.1:8191`. The application runs as the non-root `node` user. The `share-data` volume stores SQLite records, ciphertext, avatars, and the registration-code database.
+Configuration is read from environment variables in `server.mjs`. No production values are supplied.
 
-Copy `.env.example` to `.env` before changing configuration:
+- `PORT`, `PUBLIC_URL`, and `DATA_ROOT` configure the listener, browser-facing origin, and data location.
+- `USER_QUOTA_BYTES` and `DISK_RESERVE_BYTES` control storage limits.
+- `ADMIN_USERNAME` and `ADMIN_PASSWORD` configure separate administrator access.
+- `MAIL_API_URL`, `MAIL_API_TOKEN`, `MAIL_SCOPE`, and `MAIL_TRANSACTIONAL_API_URL` configure external verification and notification services.
+- `PAYMENT_API_ROOT`, `PAYMENT_MERCHANT_NUM`, `PAYMENT_SECRET`, and `PAYMENT_PAY_TYPE` configure payment integration.
+- `STORAGE_API_URL`, `STORAGE_API_TOKEN`, and `STORAGE_POOL_ID` configure external storage.
+- `WEBAUTHN_RP_ID` configures the relying-party identifier.
 
-- PowerShell: `Copy-Item .env.example .env`
-- Linux: `cp .env.example .env`
+Consult the source for defaults and validation. Keeping the call paths does not provide the external services themselves. Without the necessary integrations, some workflows will be unavailable.
 
-Available settings include:
+## Browser and authentication requirements
 
-- `PUBLIC_URL`: the actual browser-facing address; locally, `http://localhost:8191`.
-- `ADMIN_PASSWORD`: empty by default, leaving administrator password sign-in disabled. Set an independent strong password if needed.
-- `USER_QUOTA_BYTES`: 5 GiB for new accounts by default.
+Web Crypto and Passkey operations require a supported secure context. Public deployments need HTTPS. Production Android associations and public origin-related constants are retained for source fidelity; they do not authorize another deployment to act as the original service.
 
-## Registration
+## Data safety
 
-An authorized administrator can issue a code:
+Use a new isolated data directory for any separately authorized assessment. Do not point a test instance at production data: migrations, retention rules, and cleanup tasks can modify or remove records and files.
 
-```sh
-docker compose exec share node scripts/enroll.mjs person@example.com
-```
+Back up databases consistently together with their ciphertext. Copying only a live SQLite database can omit WAL changes. Local storage may combine multiple encrypted chunks into one file, with chunk boundaries recorded in the database. External storage uses a separate service.
 
-The code appears only in the terminal. It is bound to the specified email string, expires after 15 minutes, and allows at most five attempts. Share it privately with the intended user. It does not verify mailbox ownership.
-
-The user sets their own sign-in and encryption passwords in their browser. Administrators should not collect encryption passwords. A verified code is consumed immediately; if registration subsequently fails, issue another code.
-
-## Running without Docker
-
-Use Node.js 22, preferably 22.13 or newer, and npm. If a prebuilt better-sqlite3 binary is unavailable, Python 3, make, and a C++ toolchain are required.
-
-```sh
-npm ci
-npm test
-npm start
-```
-
-In a separate terminal, run `node scripts/enroll.mjs person@example.com`.
-
-Run from the repository root: resource paths depend on the working directory. The default data path is `data/`. Direct `npm start` does not automatically load `.env`; supply variables through the calling environment.
-
-## HTTPS and proxies
-
-For public access, use HTTPS and a reverse proxy to the local application port. Set `PUBLIC_URL` to the actual HTTPS origin and recreate the container to apply configuration.
-
-Web Crypto and Passkeys require a secure context. Localhost is a development exception; ordinary HTTP on a LAN address is not an equivalent replacement. This edition trusts its Web origin and does not include Android associations.
-
-Configure the proxy for streamed chunk uploads, appropriate request-size and rate limits, and no API response caching. Do not expose authentication cookies in logs. The server uses `trust proxy = 1`, which assumes one trusted proxy hop; adjust this for the actual network rather than trusting arbitrary forwarded headers.
-
-## Preserving your data
-
-Use `docker compose stop` to stop the service and `docker compose up -d` to restart it. **Do not use `docker compose down -v` when you need to retain data: it removes the volume.**
-
-For backups, stop the application and preserve the full data volume, or coordinate a consistent SQLite backup with ciphertext snapshots. Copying a live database file alone may omit WAL changes and associated files.
-
-Local storage uses `data/files/<user_id>/`. Upload completion can concatenate encrypted chunks into one `.bin` file while retaining chunk boundaries in the database. The number of files on disk is therefore not the chunk count. Preserve both the database and ciphertext; readable recovery also requires appropriate user keys.
-
-## Checks and limitations
-
-`npm test` covers encryption functions, integrity rejection, enrollment behavior, and static resources. `node scripts/smoke.mjs` starts an isolated temporary service on port 18292, checks registration and chunk transfers, and removes its own temporary data.
-
-See [VERIFICATION.md](VERIFICATION.md) for evidence and gaps. Tests do not replace browser, authenticator, security, or long-running transfer assessments.
-
-Email recovery, payments, and private storage adapters are unavailable. Related entry points fail explicitly rather than bypassing verification. Policy placeholders are not ready-to-use legal terms.
+This repository deliberately excludes environment files, service credentials, databases, and user uploads. Do not add them to a public fork or report.

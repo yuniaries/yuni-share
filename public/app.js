@@ -1534,7 +1534,7 @@ async function loadSession({ key } = {}) {
     me = await api('/api/me');
     if (key && me.encryption) vaultKey = key;
     $('#username').textContent = me.username;
-    const avatarUrl = me.avatarUrl || '/brand.svg';
+    const avatarUrl = me.avatarUrl || '/li-bai-avatar.png';
     $('#accountAvatar').src = avatarUrl;
     $('#mobileAccountAvatar').src = avatarUrl;
     updateStorage();
