@@ -40,9 +40,15 @@ Availability depends on your browser, operating system, password manager, and au
 
 ## Does uploading change file quality?
 
-The implementation can apply lossless gzip compression to chunks before encryption when the browser supports it and the compressed result is smaller. Download reconstruction reverses that compression.
+The promise "No compression, no speed limits, no transcoding" describes the intended user experience. Here, "no compression" means **no lossy compression or quality reduction**, not that the transfer format never uses compression. Your photos, videos, and other files are not re-encoded into a different media format as part of this upload process.
 
-This is not lossy image or video compression: it does not reduce resolution or transcode media.
+Internally, the browser can apply **lossless gzip compression** to individual chunks before encryption. It uses the compressed payload only when gzip is supported and the result is smaller; otherwise, it keeps the original chunk payload. This reversible storage and transfer step does not discard file content or reduce image resolution, video frame rate, or media quality.
+
+When you download a file, the client decrypts the chunks, automatically decompresses any gzip-compressed payloads, and reassembles the original file. You do not receive a gzip archive and do not need to unzip anything yourself. For an unchanged file, successful reconstruction restores the original bytes. You can check this by comparing SHA-256 hashes of the original and downloaded files; matching hashes confirm byte-for-byte equality.
+
+"No speed limits" refers to the service's advertised absence of an artificial transfer-speed cap, not a promise of a particular speed or unlimited resources. Actual throughput still depends on your connection, device, encryption and compression work, server capacity, and storage service. It should not be read as removing storage quotas or other service limits.
+
+In short: **original file content and quality are preserved, without lossy compression or transcoding. Optional lossless gzip is automatically reversed on download.**
 
 ## What should I do to stay safe?
 

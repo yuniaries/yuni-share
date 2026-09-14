@@ -4,7 +4,9 @@
 
 The included application files were read from the running `yuni-share-app` container on September 14, 2026.
 
-Container image label: `yuni-share-app:share-style-integrity-20260913-r1`.
+Initial container image label: `yuni-share-app:share-style-integrity-20260913-r1`.
+
+The subsequent title-only deployment, `yuni-share-app:title-only-20260914`, is also reflected here. The title in `public/index.html` now describes encrypted file storage and management without claiming a sharing feature. Its updated SHA-256 value was checked directly against the running container; no other runtime file was changed by this synchronization.
 
 The files listed in [SOURCE-SHA256.txt](SOURCE-SHA256.txt) were compared with SHA-256 values obtained directly from the running container. Their bytes matched at capture and local verification time. The list covers the included application files, not repository documentation or all infrastructure.
 

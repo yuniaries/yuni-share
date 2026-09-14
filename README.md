@@ -20,7 +20,7 @@ Your browser generates a vault key. Your separate encryption password is process
 
 Each upload receives a random 256-bit file key and a file nonce. Chunk encryption binds content to the upload identifier and chunk index using authenticated data. The client verifies and decrypts downloaded chunks before reconstructing the file.
 
-Format version 2 can apply lossless gzip compression before encryption when supported and beneficial. It does not perform lossy image or video transcoding.
+Our "No compression, no speed limits, no transcoding" message refers to preserving original file quality without lossy compression or media re-encoding. Internally, format version 2 may use reversible, lossless gzip compression before encryption when supported and beneficial. Downloads automatically decompress those chunks and reconstruct the original file; no manual extraction is needed. The speed statement is not a guaranteed transfer rate or a removal of storage quotas. Read [Does uploading change file quality?](SECURITY.md#does-uploading-change-file-quality) for the full explanation.
 
 File content and sensitive metadata are encrypted, but account and storage information such as email addresses, timestamps, sizes, and category hints remains visible to the server. Avatars are outside file encryption. Read [Your Files and Privacy](SECURITY.md) for details.
 
