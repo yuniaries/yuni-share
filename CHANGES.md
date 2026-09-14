@@ -1,15 +1,39 @@
-# 相对输入压缩包的变更
+# Edition Notes
 
-- 删除 `public/downloads/`（6 个 APK 及更新清单备份）、根更新清单和旧 `app.js.bak-*`。
-- 不带入 `membership-expiry.mjs` 邮件提醒实现。删除服务端邮件发送与邮件正文，通知扩展点返回未实现。
-- 删除支付回调/下单网络实现；相关路由返回 501。配额模型、订阅数据结构暂保留，避免改变文件授权与计量逻辑。
-- 移除私有存储管理器网络实现，默认使用现有本地存储分支；原远端分支调用点只供结构审查，不可启用。
-- 注册改为管理员本地生成的单次、限时、邮箱绑定注册码。未改为无验证注册。
-- 邮件重置和发起账户删除停用；恢复令牌校验逻辑仍可审查，不会发送邮件。旧生产数据不能直接移入本版。
-- 移除线上域名、Android 签名/来源绑定和个人头像；政策改为部署者须自行填写的占位页。
-- 保留核心加密函数；补充测试、部署配置、配置示例、审查说明及 Git 忽略规则。
-- 修复本地存储上传完成路径 INSERT 的占位符数量：17 列原为 18 个占位符，改为 17 个。使用隔离测试确认完整上传与下载。
-- 修复部分分片大小记录中含 null 时被整体重置的问题，保留已完成分片记录，避免多片压缩上传无法完成。
-- 原始输入 ZIP 未修改。不要把同级 `original/` 目录上传 GitHub，只使用本 `source/` 目录或交付的干净 ZIP。
+This page explains what you can expect from the public review edition and how its scope differs from the full service.
 
-这是派生的审查/部署版本，不是对线上版本一致性的证明；后续发布应明确标识来源、日期和实际改动。
+## Included
+
+The edition retains core client-side encryption, file management, account authorization, and local storage logic. Supporting tests and configuration examples make these components easier to inspect.
+
+## External services
+
+- Email delivery and notification templates are excluded. Notification extension points return an unavailable result.
+- Payment callbacks and order-processing implementations are excluded; corresponding entry points return HTTP 501.
+- The private storage-service transport is excluded. This edition uses local storage; retained remote-storage branches cannot be enabled.
+- APK packages, update manifests, historical backups, production configuration, and user data are excluded.
+
+Quota models, subscription structures, and some extension interfaces remain so you can understand their relationship to file accounting and authorization.
+
+## Accounts
+
+Registration uses an administrator-issued, email-bound, single-use code with an expiry and an attempt limit. It does not establish mailbox ownership.
+
+Email password resets and new account-deletion requests are disabled. Recovery validation remains available for inspection, without email delivery. This edition is not intended to accept an existing production database.
+
+## Presentation
+
+Production domain references, Android certificate associations, and the personal avatar were removed. A simple SVG provides the default brand image. Policy pages are placeholders for separately authorized deployments.
+
+## Local-storage fixes
+
+Two changes support complete transfers through the local storage implementation:
+
+- The completion INSERT now has 17 placeholders for its 17 columns.
+- Recording another chunk preserves already completed chunk sizes when other entries remain null, rather than resetting the partial record.
+
+The verification record describes the isolated transfer checks.
+
+## Publication scope
+
+This is a derived review edition, not evidence of production-code equivalence. Documentation and publication permissions are described in [README.md](README.md) and [LICENSE](LICENSE).

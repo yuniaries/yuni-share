@@ -1,28 +1,30 @@
-# 本次验证记录
+# Verification Record
 
-日期：2026-09-14。仅测试本地隔离副本，未部署或修改线上服务。
+This page helps you distinguish tested behavior from areas that still require assessment.
 
-## 已通过
+## Recorded checks — September 14, 2026
 
-- Dockerfile 构建成功（本地 Linux amd64，Node 22 基础镜像，npm ci 锁定依赖）。
-- 镜像中 `npm test`：4 项通过、0 失败。
-- HTML 的本地 script/CSS 引用存在，声明的 SHA-384 SRI 与文件一致。
-- 使用实际 `public/app.js` 函数验证分片加密/解密、错误 AAD 和密文篡改拒绝、不同密码派生的密钥不能互相解密。
-- 注册码邮箱绑定、一次使用、五次失败锁定、无邮件 issue 接口明确失败。
-- 镜像中 `node scripts/smoke.mjs`：启动临时服务/新数据目录，注册、读取会话、2 片压缩格式加密上传、完成、下载逐字节比较、退出后拒绝匿名读取、重新登录、未提供的支付/密码邮件接口返回 501。脚本会清理自己的临时数据。
-- 核查交付目录不含 APK、数据库、用户密文、环境密钥文件、邮件发送实现；对常见私钥/令牌特征及原站点地址做了模式检查，未发现匹配。模式检查不是无遗漏保证。
+Checks were performed against an isolated local edition, not the live service.
 
-## 未验证 / 不应据此宣称
+- Docker image build completed on Linux amd64 with Node.js 22 and locked dependencies installed through `npm ci`.
+- All four automated tests passed inside the image.
+- Local script and stylesheet references existed, and declared SHA-384 integrity values matched their assets.
+- Tests exercised the actual frontend chunk functions: encryption/decryption, incorrect authenticated data, modified ciphertext, and rejection when a different password-derived key was used.
+- Enrollment tests covered email binding, single use, five-attempt lockout, and an explicit unavailable response for code delivery.
+- An isolated smoke test covered registration, session access, two-chunk compressed-format upload, completion, byte-for-byte ciphertext download comparison, logout, unauthenticated rejection, subsequent sign-in, and HTTP 501 responses for unavailable integrations.
+- The publication directory was checked for APKs, databases, user ciphertext, environment secrets, and email transports. Pattern checks found no matching common private-key/token markers or original site addresses. Pattern scanning is not a guarantee that every possible issue has been detected.
 
-- 未进行完整安全审计、独立渗透测试、依赖漏洞审计或密码学形式化证明。
-- 未完成真实浏览器视觉验收、实体 Passkey、所有文件预览/编辑和长时间大文件并发测试。
-- 未验证 Windows 原生 npm 安装；Docker 镜像在 Linux/WSL 环境构建运行。
-- 未验证外部存储、邮件、支付或 Android；这些实现不在交付范围。
-- 不能证明线上部署与本裁剪版一致。
+## What these checks do not establish
 
-## 自行复测
+They are not a comprehensive security audit, penetration test, dependency vulnerability assessment, or formal cryptographic proof.
 
-以下执行步骤仅供权利人或另获书面授权者使用，公开测试代码不构成运行许可，见 LICENSE。
+Recorded testing does not cover full browser visual acceptance, physical Passkeys, every preview/editing path, long-running concurrent transfers, or native Windows npm installation. External storage, email, payments, and Android are outside this edition.
+
+These results do not establish that the live service runs identical code.
+
+## Reproducing the checks
+
+Execution requires ownership or separate written authorization under [LICENSE](LICENSE).
 
 ```sh
 docker compose build
@@ -30,4 +32,8 @@ docker compose run --rm share npm test
 docker compose run --rm share node scripts/smoke.mjs
 ```
 
-smoke 脚本在容器内使用独立临时数据目录和 18292 端口，不会复用现有数据库。不要把测试步骤改指向真实生产服务。
+The smoke script uses a temporary data directory and port 18292 inside the container. It does not reuse an existing database. Do not adapt it to target a live production service.
+
+## Documentation language
+
+The public documentation is written in English. Application interface strings remain in their original language; documentation changes do not constitute a new functional test run.

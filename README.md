@@ -1,75 +1,80 @@
 # Yuni Share
 
-面向个人文件存储的端到端加密应用。文件内容在浏览器中加密后上传，下载时由客户端解密还原；文件名、路径和文件密钥等元数据也以加密形式保存。
+Your files, protected before they leave your browser.
 
-本仓库公开 Web 客户端与服务端的核心实现，供阅读、安全审查和问题反馈。你可以从代码中了解密钥如何生成与保护、文件如何分片加密，以及服务端如何管理密文与访问权限。
+Yuni Share is a personal file-storage application with client-side encryption. Your browser encrypts file contents before uploading them and decrypts them when you download. File names, paths, and per-file keys are also stored in encrypted metadata.
 
-## 核心功能
+This repository lets you examine how that protection works: how keys are created, how files are encrypted in chunks, and how the server controls access to stored ciphertext.
 
-- **文件加密**：每个文件使用独立随机密钥，通过 AES-GCM 对分片进行加密与完整性验证。
-- **元数据保护**：加密保存文件名、路径、文件密钥等信息。
-- **文件管理**：上传、下载、预览、搜索与文件夹管理。
-- **账户与认证**：邮箱标识登录、密码哈希、会话管理、用户名修改及 Web Passkey 相关流程。
-- **分片传输**：分片上传、续传相关逻辑、完成校验与下载还原。
-- **存储管理**：本地密文存储、SQLite 数据记录、账户配额与管理接口。
+## What you can explore
 
-## 加密设计
+- **File protection:** independent random file keys and AES-GCM encryption with integrity checks.
+- **Private metadata:** encrypted file names, paths, and per-file keys.
+- **File management:** uploads, downloads, previews, search, and folders.
+- **Account access:** email-based sign-in, password hashing, sessions, username changes, and Web Passkey flows.
+- **Chunked transfers:** upload, resumption-related handling, completion checks, and download reconstruction.
+- **Storage management:** local ciphertext storage, SQLite records, quotas, and administrative interfaces.
 
-### 空间主密钥
+## How your files are protected
 
-客户端生成空间主密钥。独立加密密码通过 PBKDF2-SHA256 派生封装密钥，再使用 AES-GCM 保护空间主密钥。登录密码与加密密码承担不同职责。
+### Your encrypted space
 
-### 文件与分片
+Your browser generates a vault key. A separate encryption password is processed with PBKDF2-SHA256 to derive a key that encrypts the vault key. Your sign-in password and encryption password serve different purposes.
 
-上传时，客户端为文件生成随机的 256 位密钥及文件 nonce。分片 IV 由文件 nonce 和分片索引构成，认证附加数据（AAD）绑定上传 ID 与分片索引。下载后，客户端验证并解密分片，再还原原文件内容。
+### Your files
 
-格式版本 2 支持在加密前对分片进行无损 gzip 压缩：仅在浏览器支持且压缩后更小时启用，不对图片或视频进行有损转码。
+Each upload receives a random 256-bit file key and a file nonce. Each chunk uses an initialization vector derived from that nonce and its index. Additional authenticated data binds the ciphertext to the upload identifier and chunk index.
 
-### 元数据与边界
+When you download a file, the client verifies and decrypts its chunks before reconstructing the content. Format version 2 can apply lossless gzip compression before encryption when supported and beneficial; it does not perform lossy image or video transcoding.
 
-空间主密钥用于保护文件元数据，其中包括文件名、路径和文件密钥。账户邮箱、密文大小、部分逻辑大小、时间、分类提示等信息仍可能由服务端读取；头像不在文件端到端加密范围内。
+### Your privacy
 
-完整设计与审查注意事项见 [安全说明](SECURITY.md)。公开源码便于检查实现，但不等于安全认证，也不能单独证明线上服务运行的代码与仓库一致。
+File content and sensitive file metadata are encrypted, but not every account or storage detail is hidden. The server still handles information such as your email address, timestamps, ciphertext size, some logical sizes, and category hints. Account avatars are outside the file-encryption boundary.
 
-## 代码导航
+Read [Your Files and Privacy](SECURITY.md) for practical explanations and limitations. Source visibility supports inspection; it is not a security certification or proof that a live website serves identical code.
 
-| 文件 | 职责 |
+## Find your way around the code
+
+| Location | What it explains |
 | --- | --- |
-| [public/app.js](public/app.js) | 客户端加密、密钥处理、上传下载与文件交互 |
-| [server.mjs](server.mjs) | 会话鉴权、文件权限、分片存储与账户管理 |
-| [enrollment.mjs](enrollment.mjs) | 邮箱绑定的一次性注册码校验 |
-| [username-migration.mjs](username-migration.mjs) | 用户名数据结构迁移 |
-| [public/register-steps.js](public/register-steps.js) | 分步注册交互 |
-| [test/](test/) | 加密、注册码及静态资源检查 |
-| [scripts/smoke.mjs](scripts/smoke.mjs) | 隔离环境中的账户与分片传输测试 |
+| [public/app.js](public/app.js) | Client-side key handling, encryption, transfers, and file interactions |
+| [server.mjs](server.mjs) | Sessions, authorization, storage, and account management |
+| [enrollment.mjs](enrollment.mjs) | Email-bound, single-use registration codes |
+| [username-migration.mjs](username-migration.mjs) | Username schema migration |
+| [public/register-steps.js](public/register-steps.js) | Step-by-step registration |
+| [test/](test/) | Encryption, enrollment, and static-resource checks |
+| [scripts/smoke.mjs](scripts/smoke.mjs) | Isolated account and transfer checks |
 
-阅读加密代码时，可从以下函数开始：
+For encryption review, start with these functions in `public/app.js`:
 
-- `derivePasswordWrappingKey` / `wrapVaultKey`：密码派生与主密钥封装。
-- `encryptMetadata`：文件元数据加密。
-- `prepareEncryptedUpload`：文件密钥生成与上传准备。
-- `encryptChunk` / `decodeFileChunk`：分片加密与解帧还原。
+- `derivePasswordWrappingKey` and `wrapVaultKey`: password derivation and vault-key protection.
+- `encryptMetadata`: file metadata encryption.
+- `prepareEncryptedUpload`: per-file key generation and upload preparation.
+- `chunkIv`, `chunkAad`, and `encryptChunk`: chunk encryption and binding.
+- `decodeFileChunk`: reconstruction after decryption.
 
-## 技术组成
+## Technology
 
-客户端使用 JavaScript 与浏览器 Web Crypto API；服务端基于 Node.js、Express 和 SQLite。WebAuthn 相关服务端验证使用 `@simplewebauthn/server`。依赖版本见 [package-lock.json](package-lock.json)。
+The client uses JavaScript and the browser Web Crypto API. The server uses Node.js, Express, and SQLite, with WebAuthn verification provided by `@simplewebauthn/server`. Dependency versions are recorded in [package-lock.json](package-lock.json).
 
-## 仓库范围
+## About this edition
 
-此仓库是面向核心逻辑审查的独立版本，不是线上完整部署镜像，也不包含 Android 原生客户端源码。
+This is a standalone core-review edition, not a complete production mirror or the native Android client.
 
-邮件发送、商业支付和私有存储服务接入不在本仓库范围内。注册使用管理员提供的邮箱绑定一次性注册码，不代表已验证邮箱所有权；依赖邮件的密码重置、发起账户删除和支付入口未启用。文件存储使用本地实现，部分扩展接口及数据结构保留供阅读。
+Email delivery, commercial payment processing, and private storage-service integrations are not included. Registration uses administrator-issued codes bound to an email string; this does not establish email ownership. Email password resets, new account-deletion requests, and payment entry points are disabled. Local storage is implemented, while some extension interfaces and data structures remain available for inspection.
 
-部署配置与测试步骤供权利人或另获授权者使用，参见 [部署说明](DEPLOYMENT.md)、[验证记录](VERIFICATION.md) 和 [版本差异](CHANGES.md)。
+The application interface currently retains its original Chinese strings. The repository documentation is in English.
 
-## 安全反馈
+You can read the [deployment reference](DEPLOYMENT.md), [verification record](VERIFICATION.md), and [edition notes](CHANGES.md) to understand its scope. Execution instructions are for the rights holder or separately authorized users.
 
-欢迎通过仓库 Issues 提交代码阅读中发现的问题。请描述涉及的文件、函数及预期行为，不要公开真实账户信息、密钥、恢复链接、数据库或用户文件。涉及敏感细节时，请先通过 [项目维护者](https://github.com/yuniaries) 确认私下反馈渠道。
+## Questions and security feedback
 
-## 使用权限
+For general questions, open an Issue describing the relevant file, function, and expected behavior. Do not post passwords, keys, recovery links, databases, or user files. For sensitive findings, contact the [maintainer](https://github.com/yuniaries) to arrange a private reporting channel first.
 
-**源码公开供审查，非开源软件。**
+## Rights and permissions
+
+**Publicly available for review. Not open-source software.**
 
 Copyright (c) 2026 yuniaries. All rights reserved.
 
-允许阅读、保留未修改的本地副本用于阅读审查，以及 GitHub 条款允许的平台内 Fork。未经单独书面授权，不授予运行部署、修改、再分发或商用等额外权利；法定权利及第三方许可不受影响。完整声明见 [LICENSE](LICENSE)。
+You may read the source, retain an unmodified local copy for reading and inspection, and fork it on GitHub as permitted by GitHub's Terms of Service. No additional permission to execute, deploy, modify, redistribute, or use it commercially is granted without separate written authorization. Statutory rights and third-party licenses are unaffected. See [LICENSE](LICENSE).

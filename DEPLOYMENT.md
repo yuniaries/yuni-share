@@ -1,39 +1,50 @@
-# 部署说明
+# Deployment Reference
 
-**仅供权利人或取得单独书面授权者执行。** 本文用于披露框架和部署逻辑，不授予运行、部署或修改许可；参见 [LICENSE](LICENSE)。普通读者可阅读源码与本文进行审查。
+This reference explains how the components fit together. **Execution is limited to the rights holder or users with separate written authorization.** Reading these instructions does not grant permission to run, deploy, or modify the software. See [LICENSE](LICENSE).
 
-## 1. 隔离原则
+## Start with an isolated environment
 
-此版只部署 Web + Node 后端 + 本地 SQLite/密文目录，不需要邮件、支付、私有存储服务。使用新目录、新数据卷，不导入线上数据库。原有配额清理逻辑会删除符合条件的密文，禁止以生产数据验证。
+The edition consists of a Web client, a Node.js backend, SQLite, and local ciphertext storage. It does not require email, payment, or private storage services.
 
-## 2. Docker Compose
+Use a fresh data directory or volume. Do not import a live database. Retained quota-cleanup logic can delete eligible ciphertext, so production data must not be used for verification.
 
-要求 Docker Engine/Desktop 与 Compose。Windows 可在 Docker Desktop 的 Linux 容器模式使用。
+## Docker Compose
+
+You need Docker Engine or Docker Desktop with Compose. On Windows, use Linux containers.
 
 ```sh
 docker compose up -d --build
 docker compose logs --tail=50 share
 ```
 
-默认仅映射本机 `127.0.0.1:8191`。容器内部以非 root 的 node 用户运行。`share-data` 卷保存 SQLite、密文、头像和注册码库；不要提交它。
+The default host binding is `127.0.0.1:8191`. The application runs as the non-root `node` user. The `share-data` volume stores SQLite records, ciphertext, avatars, and the registration-code database.
 
-复制 `.env.example` 为 `.env` 后修改：PowerShell 用 `Copy-Item .env.example .env`；Linux 用 `cp .env.example .env`。
+Copy `.env.example` to `.env` before changing configuration:
 
-- `PUBLIC_URL`：浏览器实际访问地址，本地为 `http://localhost:8191`。
-- `ADMIN_PASSWORD`：默认空，管理密码登录不启用；若需要管理面板，设置独立强密码。
-- `USER_QUOTA_BYTES`：新用户默认 5 GiB。
+- PowerShell: `Copy-Item .env.example .env`
+- Linux: `cp .env.example .env`
 
-生成注册码：
+Available settings include:
+
+- `PUBLIC_URL`: the actual browser-facing address; locally, `http://localhost:8191`.
+- `ADMIN_PASSWORD`: empty by default, leaving administrator password sign-in disabled. Set an independent strong password if needed.
+- `USER_QUOTA_BYTES`: 5 GiB for new accounts by default.
+
+## Registration
+
+An authorized administrator can issue a code:
 
 ```sh
 docker compose exec share node scripts/enroll.mjs person@example.com
 ```
 
-注册码只在命令终端显示，不发邮件；它绑定对应邮箱字符串，不是共享万能码。由用户在自己的浏览器设置登录密码和独立加密密码；不要让管理员代收加密密码。注册码成功验证后立即消耗，后续注册如果失败需要重新生成。
+The code appears only in the terminal. It is bound to the specified email string, expires after 15 minutes, and allows at most five attempts. Share it privately with the intended user. It does not verify mailbox ownership.
 
-## 3. 不使用 Docker
+The user sets their own sign-in and encryption passwords in their browser. Administrators should not collect encryption passwords. A verified code is consumed immediately; if registration subsequently fails, issue another code.
 
-要求 Node.js 22（建议至少 22.13）、npm；better-sqlite3 若不能获取预编译包，需要 Python 3、make 和 C++ 编译工具。
+## Running without Docker
+
+Use Node.js 22, preferably 22.13 or newer, and npm. If a prebuilt better-sqlite3 binary is unavailable, Python 3, make, and a C++ toolchain are required.
 
 ```sh
 npm ci
@@ -41,24 +52,30 @@ npm test
 npm start
 ```
 
-另一终端执行 `node scripts/enroll.mjs person@example.com`。默认数据目录是工作目录下 `data/`。环境变量由调用环境传入；直接 `npm start` 不会自动读取 `.env`。始终在仓库根目录运行，前端资源路径依赖当前目录。
+In a separate terminal, run `node scripts/enroll.mjs person@example.com`.
 
-## 4. HTTPS 与反向代理
+Run from the repository root: resource paths depend on the working directory. The default data path is `data/`. Direct `npm start` does not automatically load `.env`; supply variables through the calling environment.
 
-公网使用 HTTPS，将域名反代到本机 8191，并设置相同的 `PUBLIC_URL=https://你的域名`，重建容器应用配置。Web Crypto / Passkey 需要安全上下文，localhost 是开发例外，普通局域网 HTTP 不能替代 HTTPS。不要使用原站域名或证书关联配置。当前只信任网页自身 Origin，不包含 Android App 关联。
+## HTTPS and proxies
 
-反向代理应限制请求大小、连接与请求速率，支持流式分片上传，不缓存 `/api/`，不把 API Cookie 写入公开日志。代码保留 `trust proxy = 1`；只适用于单层可信反代，部署者应依据真实链路调整，不能直接信任用户伪造的转发头。
+For public access, use HTTPS and a reverse proxy to the local application port. Set `PUBLIC_URL` to the actual HTTPS origin and recreate the container to apply configuration.
 
-## 5. 数据、备份与停止
+Web Crypto and Passkeys require a secure context. Localhost is a development exception; ordinary HTTP on a LAN address is not an equivalent replacement. This edition trusts its Web origin and does not include Android associations.
 
-停止用 `docker compose stop`；保留数据重启用 `docker compose up -d`。不要运行 `docker compose down -v`，它会删除数据卷。备份需要在应用停止后完整保存数据卷，或对 SQLite 使用一致性备份并协调密文文件快照；不能只复制正在使用的 share.db 而忽略 WAL 和密文。
+Configure the proxy for streamed chunk uploads, appropriate request-size and rate limits, and no API response caching. Do not expose authentication cookies in logs. The server uses `trust proxy = 1`, which assumes one trusted proxy hop; adjust this for the actual network rather than trusting arbitrary forwarded headers.
 
-文件存储在 `data/files/<user_id>/`。本地后端完成上传时可能将多个密文片拼接为一个 `.bin`，边界保存在数据库中；不能仅看磁盘文件数量推断分片数。没有用户密钥及加密元数据不能还原原文件，数据库和密文都需保留。
+## Preserving your data
 
-## 6. 验证与局限
+Use `docker compose stop` to stop the service and `docker compose up -d` to restart it. **Do not use `docker compose down -v` when you need to retain data: it removes the volume.**
 
-运行 `npm test` 可测试实际前端分片函数的加解密、篡改/AAD 拒绝、密码派生和注册码行为。它不是完整安全审计，也不能代替真实浏览器 Passkey/文件预览与多设备测试。验证记录见 `VERIFICATION.md`。
+For backups, stop the application and preserve the full data volume, or coordinate a consistent SQLite backup with ciphertext snapshots. Copying a live database file alone may omit WAL changes and associated files.
 
-运行 `node scripts/smoke.mjs` 会自动启动隔离服务并测试注册和完整分片传输，测试使用临时目录并自行清理；需保证 18292 端口空闲。
+Local storage uses `data/files/<user_id>/`. Upload completion can concatenate encrypted chunks into one `.bin` file while retaining chunk boundaries in the database. The number of files on disk is therefore not the chunk count. Preserve both the database and ciphertext; readable recovery also requires appropriate user keys.
 
-邮件恢复、支付和线上私有存储适配均不提供。可用接口不应因为缺少集成而默默绕过验证；本版相关入口明确失败。政策占位页不构成可直接使用的对外法律文本。
+## Checks and limitations
+
+`npm test` covers encryption functions, integrity rejection, enrollment behavior, and static resources. `node scripts/smoke.mjs` starts an isolated temporary service on port 18292, checks registration and chunk transfers, and removes its own temporary data.
+
+See [VERIFICATION.md](VERIFICATION.md) for evidence and gaps. Tests do not replace browser, authenticator, security, or long-running transfer assessments.
+
+Email recovery, payments, and private storage adapters are unavailable. Related entry points fail explicitly rather than bypassing verification. Policy placeholders are not ready-to-use legal terms.
