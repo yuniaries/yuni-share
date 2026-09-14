@@ -1,0 +1,33 @@
+Yuni Share - Source Disclosure for Review Only
+
+Copyright (c) 2026 yuniaries. All rights reserved.
+
+This repository is publicly disclosed for reading, security inspection and
+reporting findings. It is NOT open-source software and is not offered under
+MIT, GPL, AGPL, or any other open-source license.
+
+You may view the source and retain an unmodified local copy solely for reading
+and inspection. Rights to view and fork this public repository on GitHub under
+GitHub's applicable Terms of Service are unaffected by this notice.
+
+Except for those limited permissions, permissions required by applicable law,
+or separate prior written authorization from the copyright holder, no license
+is granted to run or deploy the software, modify it, create derivative works,
+redistribute it outside the permissions described above, incorporate it into
+another product, or use it for commercial or non-commercial operations.
+Technical deployment instructions and included tests do not grant permission
+to execute, deploy, or modify the software.
+
+Keep this notice and any applicable third-party notices with permitted copies.
+Third-party dependencies and material remain governed by their respective
+licenses; this notice does not restrict rights granted by their owners.
+No trademark rights are granted.
+
+To request additional permission, contact the repository owner:
+https://github.com/yuniaries
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO WARRANTIES OF MERCHANTABILITY, FITNESS
+FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. TO THE EXTENT PERMITTED BY LAW,
+THE COPYRIGHT HOLDER SHALL NOT BE LIABLE FOR CLAIMS, DAMAGES OR OTHER LIABILITY
+ARISING FROM THE SOFTWARE OR ITS USE.

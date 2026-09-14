@@ -1,0 +1,11 @@
+node_modules/
+data/
+.env
+*.db*
+*.sqlite*
+*.log
+*.apk
+*.zip
+*.tar.gz
+*.bak*
+coverage/

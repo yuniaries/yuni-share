@@ -1,0 +1,330 @@
+[hidden] {
+  display: none !important;
+}
+
+.modalbackdrop {
+  display: none !important;
+}
+
+.modalbackdrop.is-open:not([hidden]) {
+  display: grid !important;
+}
+
+.headeractions {
+  display: flex;
+  gap: 8px;
+}
+
+.headeractions button {
+  padding: 8px 12px;
+  font-size: 13px;
+}
+
+.toolbar {
+  align-items: center;
+  min-height: 52px;
+}
+
+.toolbar #searchButton {
+  flex: 0 0 auto;
+  width: auto;
+  min-width: 76px;
+  height: 38px;
+  padding: 0 14px;
+  font-size: 13px;
+}
+
+.login .passkeybutton {
+  margin-top: 10px;
+  background: #edf5ee;
+  color: #286447;
+  box-shadow: none;
+}
+
+.passkeymanager {
+  width: min(100%, 620px);
+}
+
+.passkeylist {
+  display: grid;
+  gap: 9px;
+  min-height: 76px;
+  margin-top: 20px;
+}
+
+.passkeyrow {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 14px;
+  align-items: center;
+  padding: 14px;
+  border: 1px solid #dfe8e1;
+  border-radius: 13px;
+  background: #f8faf8;
+}
+
+.passkeyrow strong,
+.passkeyrow small {
+  display: block;
+}
+
+.passkeyrow small {
+  margin-top: 4px;
+  color: #6c7971;
+  line-height: 1.5;
+}
+
+.passkeydelete {
+  padding: 8px 11px;
+  color: #a43f36;
+  background: #f9eae7;
+  box-shadow: none;
+  font-size: 12px;
+}
+
+.passkeydelete.confirming {
+  color: #fff;
+  background: #a43f36;
+}
+
+.auditdetails {
+  display: grid;
+  gap: 7px;
+  margin: 0;
+}
+
+.auditdetails div {
+  display: grid;
+  grid-template-columns: 92px minmax(0, 1fr);
+  gap: 12px;
+}
+
+.auditdetails dt {
+  color: #77827b;
+  font-size: 12px;
+}
+
+.auditdetails dd {
+  margin: 0;
+  color: #33483b;
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.auditidentity small {
+  display: block;
+  margin-top: 7px;
+  color: #52685a;
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.audittoolbar {
+  display: flex;
+  gap: 10px;
+  margin-top: 20px;
+  padding: 6px;
+  border: 1px solid #dce6de;
+  border-radius: 13px;
+  background: #f8faf8;
+}
+
+.audittoolbar input {
+  min-width: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.audittoolbar button {
+  flex: 0 0 auto;
+  min-width: 90px;
+  padding: 9px 14px;
+  font-size: 13px;
+}
+
+.auditpagination {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+  padding-top: 18px;
+  border-top: 1px solid #e7ece8;
+}
+
+.auditpagination button {
+  padding: 8px 13px;
+  font-size: 12px;
+}
+
+.auditpagination span {
+  color: #647169;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.danger.inactive {
+  border-color: #e2e6e3;
+  background: #fafbfa;
+}
+
+.danger.inactive .actionicon {
+  color: #778078;
+  background: #ecefed;
+}
+
+#refundEligibility.membership-inactive {
+  color: #8a4d46;
+  font-weight: 650;
+}
+
+.userentitlements {
+  display: grid;
+  gap: 4px;
+}
+
+.userentitlements b {
+  color: #53635a;
+  font-size: 12px;
+  font-weight: 650;
+}
+
+.userentitlements small {
+  color: #247047;
+  font-size: 11px;
+  font-weight: 750;
+}
+
+.addoninventory {
+  margin-top: 18px;
+  padding-top: 18px;
+  border-top: 1px solid #e3eae5;
+}
+
+.addoninventoryhead {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.addoninventoryhead span {
+  color: #4c7b5d;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: .13em;
+}
+
+.addoninventoryhead h3 {
+  margin-top: 3px;
+}
+
+.addoninventoryhead > b {
+  padding: 5px 9px;
+  border-radius: 999px;
+  background: #edf5ee;
+  color: #39704a;
+  font-size: 10px;
+}
+
+.addonrows {
+  margin-top: 11px;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.addonrows article {
+  min-width: 0;
+  padding: 12px 13px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 3px 12px;
+  border: 1px solid #dce7df;
+  border-radius: 11px;
+  background: #f8fbf8;
+}
+
+.addonrows article > div {
+  min-width: 0;
+  display: grid;
+  gap: 3px;
+}
+
+.addonrows strong {
+  overflow: hidden;
+  font-size: 12px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.addonrows small,
+.addonrows span {
+  color: #728078;
+  font-size: 10px;
+}
+
+.addonrows article > b {
+  color: #216a47;
+  font-size: 13px;
+}
+
+.addonrows article > span {
+  grid-column: 1 / -1;
+}
+
+.addonempty {
+  margin-top: 11px;
+  padding: 13px;
+  border: 1px dashed #dce4de;
+  border-radius: 10px;
+  background: #f8faf8;
+  color: #738078;
+  font-size: 12px;
+}
+
+.statgrid {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+@media (max-width: 700px) {
+  .headeractions {
+    width: 100%;
+  }
+
+  .headeractions button {
+    flex: 1;
+  }
+
+  .toolbar #searchButton {
+    width: 100%;
+  }
+
+  .passkeyrow,
+  .auditdetails div {
+    grid-template-columns: 1fr;
+  }
+
+  .audittoolbar {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .audittoolbar button {
+    width: 100%;
+  }
+
+  .auditpagination {
+    justify-content: space-between;
+  }
+
+  .passkeydelete {
+    width: 100%;
+  }
+
+  .addonrows,
+  .statgrid {
+    grid-template-columns: 1fr;
+  }
+}

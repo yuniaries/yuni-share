@@ -1,0 +1,7 @@
+User-agent: *
+Disallow: /api/
+Disallow: /admin
+Disallow: /s/
+Disallow: /auth/
+Disallow: /avatars/
+Sitemap: /sitemap.xml

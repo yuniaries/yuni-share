@@ -1,0 +1,2 @@
+/* Unavailable integrations are also rejected by the server, not only hidden here. */
+#subscription, #forgotPassword { display: none !important; }

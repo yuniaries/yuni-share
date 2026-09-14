@@ -1,0 +1,390 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="color-scheme" content="light">
+  <meta name="theme-color" content="#ffffff">
+  <title>Yuni Share｜端到端加密文件存储、管理与安全分享</title>
+  <meta name="description" content="Yuni Share 提供在线文件上传、管理与分享服务，帮助你整理个人文件、查看存储空间和管理分享内容。通过浏览器访问文件工作区，在不同设备间管理和分享所需资料，并查看账户与订阅信息。">
+  <link rel="icon" type="image/png" sizes="256x256" href="/brand.svg">
+  <link rel="apple-touch-icon" href="/brand.svg">
+  <link rel="stylesheet" href="/styles.css?v=96-home-seo-r1" integrity="sha384-87pwE8QkpYl3TAsYAtt2hDndQk3q0CDIaIO9G6FGUFKhUhbrRcvIWuj6AMQLF/ad" crossorigin="anonymous">
+  <link rel="stylesheet" href="/auth-green.css?v=20260910-4">
+  <script type="module" src="/register-steps.js?v=2"></script>
+<link rel="stylesheet" href="/standalone.css"></head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="/" aria-label="Yuni Share 首页"><img class="brand-mark" src="/brand.svg" alt="Yuni Share 标志"><h1 style="font:inherit;margin:0"><span>Yuni Share</span></h1></a>
+    <div class="account" id="account" hidden>
+      <button class="icon-button" id="avatarButton" type="button" title="更换头像"><img id="accountAvatar" src="/brand.svg" alt="头像" style="width:28px;height:28px;border-radius:50%;object-fit:cover"><span class="mobile-action-label">头像</span></button>
+      <input id="avatarInput" type="file" accept="image/png,image/jpeg,image/webp" hidden>
+      <span class="account-name" id="username"></span>
+      <button class="account-control" id="subscription" type="button" title="增加端到端加密空间">增加空间</button>
+      <button class="account-control" id="accountDelete" type="button" title="账户与数据" aria-label="账户与数据">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.25"/><path d="M5.5 20c.7-3.3 3.05-5 6.5-5s5.8 1.7 6.5 5"/></svg>
+        <span>账户与数据</span>
+      </button>
+      <button class="icon-button" id="logout" title="退出登录" aria-label="退出登录">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 17l5-5-5-5M15 12H3M15 3h4a2 2 0 012 2v14a2 2 0 01-2 2h-4"/></svg>
+        <span class="mobile-action-label">退出</span>
+      </button>
+    </div>
+  </header>
+
+  <main>
+    <section class="site-announcement" id="siteAnnouncement" hidden aria-live="polite"></section>
+    <section class="session-loading" id="sessionLoading" aria-live="polite">
+      <span class="session-spinner" aria-hidden="true"></span>
+      <span>正在确认登录状态</span>
+    </section>
+
+    <section class="auth-view" id="authView" hidden>
+      <div class="auth-copy">
+        <p class="eyebrow">端到端加密文件空间</p>
+        <h2>你的文件，只属于你。</h2>
+        <p>文件会在浏览器中加密后上传，不转码；可无损压缩分片。服务器保存密文，只有解锁后的账户才能还原原文件。</p>
+        <div class="feature-row">
+          <span>本地加密</span><span>分片上传</span><span>私有下载</span><span>原内容还原</span>
+        </div>
+      </div>
+      <div class="auth-panel">
+        <div class="auth-card-brand"><img src="/brand.svg" alt="Yuni Share 标志"><span>Yuni Share</span></div>
+        <div class="tabs" role="tablist">
+          <button class="tab active" id="loginTab" role="tab">登录</button>
+          <button class="tab" id="registerTab" role="tab">注册</button>
+        </div>
+        <form id="authForm">
+          <label id="emailField">邮箱<input name="email" type="email" autocomplete="email" maxlength="254" required placeholder="name@example.com"></label>
+          <label id="usernameField" hidden>用户名<input name="username" autocomplete="username" minlength="3" maxlength="32" placeholder="字母、数字或下划线"></label>
+          <label>密码<span class="password-input"><input id="authPassword" name="password" type="password" autocomplete="current-password" minlength="10" maxlength="128" required placeholder="至少 10 个字符"><button class="password-visibility-toggle" type="button" data-password-toggle="authPassword" aria-label="显示密码" aria-pressed="false" title="显示密码"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6Z"></path><circle cx="12" cy="12" r="2.75"></circle></svg><svg class="password-visibility-hidden-icon" aria-hidden="true" viewBox="0 0 24 24"><path d="m3 3 18 18"></path><path d="M10.6 6.2A10.2 10.2 0 0 1 12 6c6 0 9.5 6 9.5 6a18 18 0 0 1-3.2 3.7M6.2 6.2C3.9 8 2.5 12 2.5 12s3.5 6 9.5 6c1.3 0 2.5-.3 3.5-.8"></path><path d="M9.8 9.8a3.1 3.1 0 0 0 4.4 4.4"></path></svg></button></span></label>
+          <label id="vaultPasswordField" hidden>加密密码<span class="password-input"><input id="authVaultPassword" name="vaultPassword" type="password" autocomplete="new-password" minlength="12" maxlength="128" placeholder="独立于登录密码，仅在本机解锁文件"><button class="password-visibility-toggle" type="button" data-password-toggle="authVaultPassword" aria-label="显示加密密码" aria-pressed="false" title="显示加密密码"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6Z"></path><circle cx="12" cy="12" r="2.75"></circle></svg><svg class="password-visibility-hidden-icon" aria-hidden="true" viewBox="0 0 24 24"><path d="m3 3 18 18"></path><path d="M10.6 6.2A10.2 10.2 0 0 1 12 6c6 0 9.5 6 9.5 6a18 18 0 0 1-3.2 3.7M6.2 6.2C3.9 8 2.5 12 2.5 12s3.5 6 9.5 6c1.3 0 2.5-.3 3.5-.8"></path><path d="M9.8 9.8a3.1 3.1 0 0 0 4.4 4.4"></path></svg></button></span></label>
+          <label id="inviteField" hidden>注册码<input name="inviteCode" type="password" autocomplete="off" placeholder="向管理员获取"></label>
+          <label id="codeField" hidden>管理员注册码<span class="code-row"><input name="code" autocomplete="one-time-code" inputmode="text" minlength="6" maxlength="6" placeholder="管理员提供的 6 位码"><button class="secondary" type="button" id="sendCode">获取方式</button></span></label>
+          <button class="primary wide passkey-login" id="passkeyLogin" type="button">使用 Passkey 登录</button>
+          <div class="auth-method-divider" id="passwordLoginDivider"><span>或使用密码登录</span></div>
+          <button class="secondary wide password-login" type="submit" id="authSubmit">登录</button>
+          <button class="text-button" id="forgotPassword" type="button">忘记登录密码？</button>
+          <p class="form-error" id="authError" role="alert"></p>
+        </form>
+      </div>
+    </section>
+
+    <section class="drive-view" id="driveView" hidden>
+      <div class="drive-head">
+        <div><p class="eyebrow">私有空间</p><h2>我的文件</h2></div>
+        <button class="mobile-profile-button" id="mobileAvatarButton" type="button" title="更换头像" aria-label="更换头像">
+          <img id="mobileAccountAvatar" src="/brand.svg" alt="当前头像">
+          <span>更换头像</span>
+        </button>
+        <div class="upload-picker-group">
+          <label class="upload-button" for="fileInput">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 16V4M7 9l5-5 5 5M5 20h14"/></svg>
+            上传文件
+          </label>
+          <label class="upload-button folder-upload-button" for="folderInput">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h7l2 2h9v11H3zM12 11v5M9.5 13.5H14.5"/></svg>
+            上传文件夹
+          </label>
+        </div>
+        <input id="fileInput" type="file" multiple hidden>
+        <input id="folderInput" type="file" webkitdirectory directory multiple hidden>
+      </div>
+      <div class="storage">
+        <div class="storage-meta"><span id="storageText">正在读取...</span><span id="storagePercent"></span></div>
+        <div class="storage-track"><div id="storageBar"></div></div>
+      </div>
+      <section class="storage-retention-notice" id="storageRetentionNotice" hidden aria-live="polite"></section>
+      <section class="vault-status" id="vaultStatus" aria-live="polite"></section>
+      <div class="drop-zone" id="dropZone" role="button" tabindex="0" aria-label="选择要上传的文件">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 15a4 4 0 014-4h1a5 5 0 019.7 1.7A3.5 3.5 0 0118.5 20H7a3 3 0 01-3-3v-2zM12 17V9M9 12l3-3 3 3"/></svg>
+        <strong>点击或拖放文件、文件夹到这里</strong><span>文件会先在当前浏览器加密，再以原始质量保存</span>
+        <div class="drop-zone-actions"><button type="button" id="pickFiles">选择文件</button><button type="button" id="pickFolder">选择文件夹</button></div>
+      </div>
+      <section class="files-section" id="filesSection">
+        <div class="section-head"><div><h2 id="currentFolderTitle">全部文件</h2><nav class="folder-breadcrumb" id="folderBreadcrumb" aria-label="当前文件夹"></nav></div><div class="section-head-actions"><span id="fileCount"></span><div class="create-item-actions"><button type="button" id="createEmptyFolder">＋ 新建文件夹</button><button type="button" id="createEmptyFile">＋ 新建空文件</button></div></div></div>
+        <div class="file-batch-toolbar" id="fileBatchToolbar" hidden>
+          <label><input id="selectVisibleFiles" type="checkbox"><span>选择当前目录</span></label>
+          <span id="selectedFileCount">已选择 0 个文件</span>
+          <div><button class="secondary" id="downloadSelectedFiles" type="button">下载所选</button><button class="secondary batch-delete" id="deleteSelectedFiles" type="button">删除所选</button></div>
+        </div>
+        <div class="explorer-tools" id="explorerTools">
+          <label class="explorer-search">搜索<input id="explorerSearch" type="search" placeholder="搜索所有文件和文件夹…" autocomplete="off" spellcheck="false"><small>解锁后在本机即时搜索，不上传文件名</small></label>
+          <label>排序<select id="explorerSort"><option value="name">名称</option><option value="time">上传时间</option><option value="size">大小</option></select></label>
+          <button type="button" id="explorerDirection" aria-label="切换排序方向">升序 ↑</button>
+          <span id="explorerResult" role="status" aria-live="polite"></span>
+        </div>
+        <div class="file-list" id="fileList"></div>
+        <div class="empty" id="emptyState" hidden><strong>空间还是空的</strong><span>上传图片、视频或其他文件开始使用</span></div>
+      </section>
+      <section class="uploads" id="uploads" hidden>
+        <div class="upload-section-head"><h2>正在上传</h2><div class="upload-batch-actions"><label><input id="selectAllUploads" type="checkbox">全选</label><button type="button" id="cancelSelectedUploads" disabled>取消所选</button><button type="button" id="cancelAllUploads">全部取消</button></div></div>
+        <div id="uploadList"></div>
+      </section>
+      <section class="uploads downloads" id="downloads" hidden><h2>正在下载</h2><div id="downloadList"></div></section>
+      <section class="uploads" id="remoteUploads" hidden><h2>其他页面正在上传</h2><div id="remoteUploadList"></div></section>
+    </section>
+  </main>
+  <footer class="site-footer">
+    <a href="/terms">服务条款</a><a href="/user-agreement">用户协议</a><a href="/privacy">隐私政策</a><a href="/disclaimer">免责声明</a><a href="/sitemap/" data-home-sitemap>网站地图</a>
+  </footer>
+  <div class="modal-backdrop" id="subscriptionModal" hidden>
+    <section class="modal subscription-modal" role="dialog" aria-modal="true" aria-labelledby="subscriptionTitle">
+      <button class="icon-button modal-close" id="closeSubscriptionModal" type="button" aria-label="关闭">×</button>
+      <header class="subscription-intro"><p class="eyebrow">增加加密空间</p><h2 id="subscriptionTitle">扩展你的端到端加密空间</h2><p>基础会员决定账户总空间，叠加包可按实际需要重复购买；文件保持原始画质，不转码；可无损压缩分片。</p></header>
+      <p id="subscriptionStatus" class="subscription-status">正在读取套餐…</p>
+      <section class="subscription-section">
+        <div class="subscription-section-heading"><div><span>基础会员</span><h3>一个账户仅保留一个有效订阅</h3></div><label id="subscriptionCycleField" class="subscription-cycle">订阅周期<select id="subscriptionCycle"><option value="monthly">按月订阅</option><option value="yearly">按年订阅（省两个月）</option></select></label></div>
+        <div class="subscription-products" id="subscriptionPlans"></div>
+      </section>
+      <section class="subscription-section subscription-addon-section">
+        <div class="subscription-section-heading"><div><span>额外存储</span><h3>可重复购买的 30 天叠加包</h3></div><span class="subscription-badge">容量可累加</span></div>
+        <p class="subscription-section-copy">每次购买都会生成一笔独立权益，容量直接累加、各自计算 30 天有效期；基础会员失效后不再计入可用配额。</p>
+        <div id="activeStorageAddons" class="active-addon-list" hidden></div>
+        <div class="subscription-products" id="storageAddonPlans"></div>
+      </section>
+      <p class="form-error" id="subscriptionError" role="alert"></p>
+    </section>
+  </div>
+  <div class="modal-backdrop" id="paymentModal" hidden>
+    <section class="modal payment-modal" role="dialog" aria-modal="true" aria-labelledby="paymentTitle">
+      <button class="icon-button modal-close" id="closePaymentModal" type="button" aria-label="关闭">×</button>
+      <div class="payment-mark" aria-hidden="true">支</div>
+      <p class="eyebrow">支付宝支付</p>
+      <h2 id="paymentTitle">前往收银台完成订阅</h2>
+      <p id="paymentProduct" class="payment-product"></p>
+      <a id="paymentLink" class="payment-cta" target="_blank" rel="noopener">
+        <span><strong>前往支付宝收银台</strong><small>将在新窗口中安全完成支付</small></span><b aria-hidden="true">↗</b>
+      </a>
+      <p id="paymentHint">支付完成后请返回本页，系统会自动确认结果。</p>
+    </section>
+  </div>
+  <div class="modal-backdrop" id="vaultModal" hidden>
+    <section class="modal" role="dialog" aria-modal="true" aria-labelledby="vaultModalTitle">
+      <button class="icon-button modal-close" id="closeVaultModal" type="button" aria-label="关闭">×</button>
+      <p class="eyebrow">端到端加密</p>
+      <h2 id="vaultModalTitle">解锁加密空间</h2>
+      <p id="vaultModalCopy"></p>
+      <form id="vaultForm">
+        <label id="vaultAccountPasswordField" hidden>登录密码<input id="vaultAccountPassword" type="password" autocomplete="current-password" minlength="10" maxlength="128"></label>
+        <label id="vaultPasswordFieldModal">加密密码<input id="vaultPassword" type="password" autocomplete="current-password" minlength="12" maxlength="128" required></label>
+        <label id="vaultNewPasswordField" hidden>新加密密码<input id="vaultNewPassword" type="password" autocomplete="new-password" minlength="12" maxlength="128"></label>
+        <label id="vaultPasswordConfirmModalField" hidden>确认加密密码<input id="vaultPasswordConfirmModal" type="password" autocomplete="new-password" minlength="12" maxlength="128"></label>
+        <label id="vaultRecoveryPasswordField" hidden>恢复密码<input id="vaultRecoveryPassword" type="password" autocomplete="current-password" minlength="12" maxlength="128" placeholder="用于恢复加密空间"></label>
+        <label id="vaultRecoveryPasswordConfirmField" hidden>确认恢复密码<input id="vaultRecoveryPasswordConfirm" type="password" autocomplete="new-password" minlength="12" maxlength="128" placeholder="再次输入恢复密码"></label>
+        <button class="primary wide" type="button" id="vaultUnlockPasskey" hidden>使用 Passkey 解锁</button>
+        <button class="primary wide" type="submit" id="vaultSubmit">解锁</button>
+        <p class="form-error" id="vaultError" role="alert"></p>
+      </form>
+    </section>
+  </div>
+  <div class="modal-backdrop" id="vaultPasskeyModal" hidden>
+    <section class="modal vault-passkey-modal" role="dialog" aria-modal="true" aria-labelledby="vaultPasskeyTitle" aria-describedby="vaultPasskeyCopy">
+      <button class="icon-button modal-close" id="closeVaultPasskeyModal" type="button" aria-label="关闭">×</button>
+      <p class="eyebrow">端到端加密</p>
+      <h2 id="vaultPasskeyTitle">Passkey</h2>
+      <p id="vaultPasskeyCopy">Passkey 的私钥由你的浏览器、设备或密码管理器保存。YUNI Share 不会知道它的保存位置，也无法读取它。</p>
+      <section class="passkey-list" id="vaultPasskeyList" aria-live="polite"></section>
+      <form id="vaultPasskeyForm">
+        <h3>创建 Passkey</h3>
+        <p class="form-help">继续后，浏览器或系统会让你选择保存位置。Passkey 可用于登录、解锁和重设加密密码。</p>
+        <section class="passkey-verification" id="vaultPasskeyVerification" hidden aria-live="polite">
+          <div><strong>推荐使用 Passkey</strong><span>使用现有 Passkey 验证并保护新的 Passkey，无需输入两个密码。</span></div>
+          <button class="secondary" id="vaultPasskeyUsePasskey" type="button">使用 Passkey 验证</button>
+          <button class="text-button" id="vaultPasskeyUsePassword" type="button">改用密码</button>
+        </section>
+        <label id="vaultPasskeyAccountPasswordField">账户登录密码<input id="vaultPasskeyAccountPassword" type="password" autocomplete="current-password" minlength="10" maxlength="128" required></label>
+        <label id="vaultPasskeyEncryptionPasswordField">加密密码<input id="vaultPasskeyEncryptionPassword" type="password" autocomplete="current-password" minlength="12" maxlength="128" required></label>
+        <section class="verification-mode-switch" id="vaultPasskeyPasswordSwitch" hidden>
+          <span>当前使用密码验证</span>
+          <button class="text-button" id="vaultPasskeySwitchToPasskey" type="button">改用 Passkey 验证</button>
+        </section>
+        <p class="passkey-password-hint" id="vaultPasskeyNoPasskeyHint" hidden>尚未添加 Passkey。请使用登录密码和加密密码添加第一个 Passkey；添加后可改用 Passkey 验证。</p>
+        <p class="form-help">加密密码是在注册时单独设置、用于解锁文件的密码；它可能与账户登录密码不同。</p>
+        <label>保存位置偏好<select id="vaultPasskeyPreference">
+          <option value="any">由浏览器或密码管理器选择（推荐）</option>
+          <option value="platform">优先使用当前设备</option>
+          <option value="cross-platform">使用手机或安全密钥</option>
+        </select></label>
+        <button class="primary wide" type="submit" id="vaultPasskeySubmit">选择并创建 Passkey</button>
+        <p class="form-error" id="vaultPasskeyError" role="alert"></p>
+      </form>
+      <form id="vaultPasskeyRemoveForm" hidden>
+        <input id="vaultPasskeyRemoveId" type="hidden">
+        <h3>移除 Passkey</h3>
+        <p class="form-help" id="vaultPasskeyRemoveCopy"></p>
+        <section class="passkey-verification" id="vaultPasskeyRemoveVerification" hidden aria-live="polite">
+          <div><strong>推荐使用 Passkey</strong><span>使用设备或密码管理器确认此操作，无需输入账户登录密码。</span></div>
+          <button class="secondary" id="vaultPasskeyRemoveUsePasskey" type="button">使用 Passkey 验证</button>
+          <button class="text-button" id="vaultPasskeyRemoveUsePassword" type="button">改用登录密码</button>
+        </section>
+        <label id="vaultPasskeyRemovePasswordField">登录密码<input id="vaultPasskeyRemovePassword" type="password" autocomplete="current-password" minlength="10" maxlength="128" required></label>
+        <section class="verification-mode-switch" id="vaultPasskeyRemovePasswordSwitch" hidden>
+          <span>当前使用登录密码验证</span>
+          <button class="text-button" id="vaultPasskeyRemoveSwitchToPasskey" type="button">改用 Passkey 验证</button>
+        </section>
+        <div class="modal-actions">
+          <button class="secondary" type="button" id="cancelVaultPasskeyRemove">取消</button>
+          <button class="primary danger-primary" type="submit" id="vaultPasskeyRemoveSubmit">移除 Passkey</button>
+        </div>
+        <p class="form-error" id="vaultPasskeyRemoveError" role="alert"></p>
+      </form>
+    </section>
+  </div>
+  <div class="modal-backdrop" id="fileManageModal" hidden>
+    <section class="modal file-manage-modal" role="dialog" aria-modal="true" aria-labelledby="fileManageTitle">
+      <button class="icon-button modal-close" id="closeFileManageModal" type="button" aria-label="关闭">×</button>
+      <p class="eyebrow">端到端加密文件管理</p>
+      <h2 id="fileManageTitle">管理文件</h2>
+      <p id="fileManageCopy">名称和目录只会在当前浏览器中解密并重新加密。</p>
+      <form id="fileManageForm">
+        <label id="fileRenameField">新文件名<input id="fileRenameInput" maxlength="240" autocomplete="off" required></label>
+        <label id="fileMoveField" hidden>目标文件夹<select id="fileMoveSelect"></select></label>
+        <div class="modal-actions">
+          <button class="secondary" id="cancelFileManage" type="button">取消</button>
+          <button class="primary" id="fileManageSubmit" type="submit">保存</button>
+        </div>
+        <p class="form-error" id="fileManageError" role="alert"></p>
+      </form>
+    </section>
+  </div>
+  <div class="modal-backdrop" id="createItemModal" hidden>
+    <section class="modal create-item-modal" role="dialog" aria-modal="true" aria-labelledby="createItemTitle">
+      <button class="icon-button modal-close" id="closeCreateItemModal" type="button" aria-label="关闭">×</button>
+      <p class="eyebrow">端到端加密文件管理</p>
+      <h2 id="createItemTitle">新建</h2>
+      <p id="createItemCopy">名称和目录只会以密文保存，服务器无法读取。</p>
+      <form id="createItemForm">
+        <label id="createItemNameLabel">名称<input id="createItemName" maxlength="240" autocomplete="off" required></label>
+        <div class="modal-actions">
+          <button class="secondary" id="cancelCreateItem" type="button">取消</button>
+          <button class="primary" id="createItemSubmit" type="submit">创建</button>
+        </div>
+        <p class="form-error" id="createItemError" role="alert"></p>
+      </form>
+    </section>
+  </div>
+  <div class="modal-backdrop" id="previewModal" hidden>
+    <section class="modal preview-modal" role="dialog" aria-modal="true" aria-labelledby="previewTitle">
+      <button class="icon-button modal-close" id="closePreviewModal" type="button" aria-label="关闭">×</button>
+      <p class="eyebrow">仅在当前浏览器解密</p>
+      <h2 id="previewTitle">文件预览</h2>
+      <p class="preview-status" id="previewStatus">正在准备预览…</p>
+      <div class="preview-stage" id="previewStage"></div>
+      <div class="modal-actions preview-actions"><button class="secondary" id="previewDownload" type="button">下载原文件</button><button class="primary" id="previewClose" type="button">关闭</button></div>
+    </section>
+  </div>
+  <div class="modal-backdrop" id="confirmModal" hidden>
+    <section class="modal confirm-modal" role="dialog" aria-modal="true" aria-labelledby="confirmModalTitle" aria-describedby="confirmModalCopy">
+      <button class="icon-button modal-close" id="closeConfirmModal" type="button" aria-label="关闭">×</button>
+      <p class="eyebrow" id="confirmModalEyebrow">确认操作</p>
+      <h2 id="confirmModalTitle">确认继续？</h2>
+      <p id="confirmModalCopy"></p>
+      <div class="modal-actions">
+        <button class="secondary" id="confirmCancel" type="button">取消</button>
+        <button class="primary danger-primary" id="confirmAccept" type="button">确认删除</button>
+      </div>
+    </section>
+  </div>
+  <div class="modal-backdrop" id="vaultPasskeyRecommendationModal" hidden>
+    <section class="modal vault-passkey-recommendation" role="dialog" aria-modal="true" aria-labelledby="vaultPasskeyRecommendationTitle">
+      <p class="eyebrow">账户保护建议</p>
+      <h2 id="vaultPasskeyRecommendationTitle">使用 Passkey 保护账户</h2>
+      <p>建议现在添加一个 Passkey。它可用于登录、解锁和重设加密密码，并替代注册时单独设置恢复密码的步骤。</p>
+      <div class="passkey-recommendation-points">
+        <span>浏览器会让你选择保存位置</span>
+        <span>YUNI Share 无法读取 Passkey 私钥或文件密钥</span>
+        <span>为避免保留明文密码，继续时需要重新输入登录密码和加密密码</span>
+        <span>请保留 Passkey 或加密密码；两者都丢失后文件无法恢复</span>
+      </div>
+      <div class="modal-actions">
+        <button class="secondary" type="button" id="skipVaultPasskeyRecommendation">稍后设置</button>
+        <button class="primary" type="button" id="startVaultPasskeyRecommendation">添加 Passkey</button>
+      </div>
+      <p class="form-error" id="vaultPasskeyRecommendationError" role="alert"></p>
+    </section>
+  </div>
+  <div class="modal-backdrop" id="accountDeletionModal" hidden>
+    <section class="modal account-deletion-modal" role="dialog" aria-modal="true" aria-labelledby="accountDeletionTitle" aria-describedby="accountDeletionCopy">
+      <button class="icon-button modal-close" id="closeAccountDeletionModal" type="button" aria-label="关闭">×</button>
+      <p class="eyebrow">账户与数据</p>
+      <form id="renameUsernameForm">
+        <label for="newUsername">更改用户名</label>
+        <input id="newUsername" name="username" required minlength="3" maxlength="32" pattern="[a-zA-Z0-9_]{3,32}" autocomplete="username" placeholder="3–32 位字母、数字或下划线">
+        <button type="submit" class="primary">保存用户名</button>
+        <p id="renameUsernameStatus" role="status"></p>
+      </form>
+      <h2 id="accountDeletionTitle">申请删除账户</h2>
+      <p id="accountDeletionCopy">提交后，账户会立即退出并锁定。恢复期结束后，账户记录和加密文件将被永久删除。</p>
+      <form id="accountDeletionForm">
+        <fieldset class="period-choice">
+          <legend>选择恢复期</legend>
+          <label class="period-option"><input type="radio" name="accountDeletionDays" value="30" checked><span><strong>30 天</strong><small>较短的恢复时间</small></span></label>
+          <label class="period-option"><input type="radio" name="accountDeletionDays" value="60"><span><strong>60 天</strong><small>更长的恢复时间</small></span></label>
+        </fieldset>
+        <section class="passkey-verification" id="accountDeletionPasskeyVerification" hidden aria-live="polite">
+          <div><strong>推荐使用 Passkey</strong><span>使用设备或密码管理器验证，无需输入账户登录密码。</span></div>
+          <button class="secondary" id="accountDeletionUsePasskey" type="button">使用 Passkey 验证</button>
+          <button class="text-button" id="accountDeletionUsePassword" type="button">改用登录密码</button>
+        </section>
+        <label id="accountDeletionPasswordField">登录密码<input id="accountDeletionPassword" type="password" autocomplete="current-password" minlength="10" maxlength="128" required></label>
+        <section class="verification-mode-switch" id="accountDeletionPasswordSwitch" hidden>
+          <span>当前使用登录密码验证</span>
+          <button class="text-button" id="accountDeletionSwitchToPasskey" type="button">改用 Passkey 验证</button>
+        </section>
+        <p class="passkey-password-hint" id="accountDeletionNoPasskeyHint" hidden>尚未添加 Passkey。建议关闭此窗口后，在“管理 Passkey”中添加，以便今后使用设备或密码管理器确认敏感操作。</p>
+        <div class="deletion-acknowledgement"><input id="accountDeletionAcknowledgement" type="checkbox" required><label for="accountDeletionAcknowledgement">我理解：恢复期结束后，账户和加密文件无法恢复。</label></div>
+        <div class="modal-actions account-deletion-actions">
+          <button class="secondary" id="cancelAccountDeletion" type="button">取消</button>
+          <button class="primary danger-primary" type="submit" id="accountDeletionSubmit">安排删除</button>
+        </div>
+        <p class="form-error" id="accountDeletionError" role="alert"></p>
+      </form>
+    </section>
+  </div>
+  <div class="modal-backdrop" id="cancelDeletionModal" hidden>
+    <section class="modal" role="dialog" aria-modal="true" aria-labelledby="cancelDeletionTitle" aria-describedby="cancelDeletionCopy">
+      <button class="icon-button modal-close" id="closeCancelDeletionModal" type="button" aria-label="关闭">×</button>
+      <p class="eyebrow">恢复账户</p>
+      <h2 id="cancelDeletionTitle">撤销账户删除</h2>
+      <p id="cancelDeletionCopy">此安全链接在你选择的恢复期结束前有效。无需输入旧登录密码；恢复成功后，删除安排会立即撤销，且此链接会立刻失效。</p>
+      <form id="cancelDeletionForm">
+        <input id="cancelDeletionToken" type="hidden">
+        <button class="primary wide" type="submit" id="cancelDeletionSubmit">撤销删除并恢复账户</button>
+        <p class="form-error" id="cancelDeletionError" role="alert"></p>
+      </form>
+    </section>
+  </div>
+  <div class="modal-backdrop" id="passwordResetRequestModal" hidden>
+    <section class="modal" role="dialog" aria-modal="true" aria-labelledby="passwordResetRequestTitle">
+      <button class="icon-button modal-close" id="closePasswordResetRequestModal" type="button" aria-label="关闭">×</button>
+      <p class="eyebrow">账户恢复</p>
+      <h2 id="passwordResetRequestTitle">重置登录密码</h2>
+      <p>输入注册邮箱。若该邮箱关联了账户，我们会发送一封包含安全按钮的邮件。</p>
+      <form id="passwordResetRequestForm">
+        <label>邮箱<input id="passwordResetEmail" type="email" autocomplete="email" maxlength="254" required placeholder="name@example.com"></label>
+        <button class="primary wide" type="submit" id="passwordResetRequestSubmit">发送重置邮件</button>
+        <p class="form-error" id="passwordResetRequestError" role="alert"></p>
+      </form>
+    </section>
+  </div>
+  <div class="modal-backdrop" id="passwordResetModal" hidden>
+    <section class="modal" role="dialog" aria-modal="true" aria-labelledby="passwordResetTitle">
+      <button class="icon-button modal-close" id="closePasswordResetModal" type="button" aria-label="关闭">×</button>
+      <p class="eyebrow">账户恢复</p>
+      <h2 id="passwordResetTitle">设置新的登录密码</h2>
+      <p>此链接仅能使用一次，且会在 15 分钟后失效。加密密码不会因此改变。</p>
+      <form id="passwordResetForm">
+        <input id="passwordResetToken" type="hidden">
+        <label>新登录密码<input id="passwordResetPassword" type="password" autocomplete="new-password" minlength="10" maxlength="128" required></label>
+        <label>确认新登录密码<input id="passwordResetConfirm" type="password" autocomplete="new-password" minlength="10" maxlength="128" required></label>
+        <button class="primary wide" type="submit" id="passwordResetSubmit">保存新的登录密码</button>
+        <p class="form-error" id="passwordResetError" role="alert"></p>
+      </form>
+    </section>
+  </div>
+  <div class="toast" id="toast" role="status"></div>
+  <link rel="stylesheet" href="/explorer.css?v=20260909-recovery-r1">
+  <script type="module" src="/entry.js?v=20260910-recovery-route-r1" integrity="sha384-vQeG8Z03ou1uxJcgDkdPCLsywKkkfueaWx46YBwIC1RM7L1wNzjHxkGYe+sxFQGS" crossorigin="anonymous"></script>
+</body>
+</html>
